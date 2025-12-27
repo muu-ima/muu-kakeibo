@@ -52,6 +52,16 @@ export default function KakeiboPage() {
 
   if (!email) return <main className="p-6">loading...</main>;
 
+  const expenseTotal = items
+    .filter((tx) => tx.type === "expense")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const incomeTotal = items
+    .filter((tx) => tx.type === "income")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const balance = incomeTotal - expenseTotal;
+
   return (
     <main className="p-6 space-y-4">
       <div className="space-y-1">
@@ -152,6 +162,34 @@ export default function KakeiboPage() {
         {msg && <p className="text-sm text-zinc-700">{msg}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
       </section>
+
+      <section className="max-w-md space-y-2 rounded-xl border p-4">
+        <p className="font-medium">月合計（{month}）</p>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="rounded-lg border p-3">
+            <p className="text-xs text-zinc-500">収入</p>
+            <p className="text-sm font-semibold">
+              {incomeTotal.toLocaleString()}円
+            </p>
+          </div>
+
+          <div className="rounded-lg border p-3">
+            <p className="text-xs text-zinc-500">支出</p>
+            <p className="text-sm font-semibold">
+              {expenseTotal.toLocaleString()}円
+            </p>
+          </div>
+
+          <div className="rounded-lg border p-3">
+            <p className="text-xs text-zinc-500">差額</p>
+            <p className="text-sm font-semibold">
+              {balance.toLocaleString()}円
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* 一覧 */}
       <section className="max-w-md space-y-2 rounded-xl border p-4">
         <div>
@@ -173,11 +211,11 @@ export default function KakeiboPage() {
                 <div className="flex justify-between">
                   <div>
                     <p className="text-sm font-medium">
-                        {tx.date} / {tx.category} ({
-                            tx.type === "expense" ? "支出" : "収入"})
+                      {tx.date} / {tx.category} (
+                      {tx.type === "expense" ? "支出" : "収入"})
                     </p>
                     {tx.memo && (
-                        <p className="text-xs text-zinc-600">{tx.memo}</p>
+                      <p className="text-xs text-zinc-600">{tx.memo}</p>
                     )}
                   </div>
                   <p className="text-sm font-semibold">
