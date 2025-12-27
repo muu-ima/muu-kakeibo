@@ -1,7 +1,7 @@
 // app/kakeibo/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase.client";
 import { useRouter } from "next/navigation";
 import {
@@ -50,17 +50,38 @@ export default function KakeiboPage() {
     })();
   }, [email, month]);
 
+  const {
+    incomeTotal,
+    expenseTotal,
+    balance,
+    expenseByCategory,
+    incomeByCategory,
+  } = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+
+    const expMap: Record<string, number> = {};
+    const incMap: Record<string, number> = {};
+
+    for (const tx of items) {
+      if (tx.type === "income") {
+        income += tx.amount;
+        incMap[tx.category] = (incMap[tx.category] ?? 0) + tx.amount;
+      } else {
+        expense += tx.amount;
+        expMap[tx.category] = (expMap[tx.category] ?? 0) + tx.amount;
+      }
+    }
+    return {
+      incomeTotal: income,
+      expenseTotal: expense,
+      balance: income - expense,
+      expenseByCategory: Object.entries(expMap).sort((a, b) => b[1] - a[1]),
+      incomeByCategory: Object.entries(incMap).sort((a, b) => b[1] - a[1]),
+    };
+  }, [items]);
+
   if (!email) return <main className="p-6">loading...</main>;
-
-  const expenseTotal = items
-    .filter((tx) => tx.type === "expense")
-    .reduce((sum, tx) => sum + tx.amount, 0);
-
-  const incomeTotal = items
-    .filter((tx) => tx.type === "income")
-    .reduce((sum, tx) => sum + tx.amount, 0);
-
-  const balance = incomeTotal - expenseTotal;
 
   return (
     <main className="p-6 space-y-4">
@@ -188,6 +209,27 @@ export default function KakeiboPage() {
             </p>
           </div>
         </div>
+      </section>
+
+      <section className="max-w-md space-y-2 rouded-xl border p-4">
+        <p className="font-medium">カテゴリ別合計（支出）</p>
+        {expenseByCategory.length === 0 ? (
+          <p className="text-sm text-zinc-500">データなし</p>
+        ) : (
+          <ul className="space y-2">
+            {expenseByCategory.map(([cat, total]) => (
+              <li
+                key={cat}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
+                <p className="text-sm">{cat}</p>
+                <p className="text-sm font-semibold">
+                  {total.toLocaleString()}円
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* 一覧 */}
