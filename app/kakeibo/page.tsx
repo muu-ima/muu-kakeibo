@@ -1,7 +1,11 @@
 // app/kakeibo/page.tsx
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
+import Section from "@/app/kakeibo/_components/Section";
+import CategorySummaryCard from "@/app/kakeibo/_components/CategorySummary";
+import TxList from "@/app/kakeibo/_components/TxList";
+import { useKakeiboSummary } from "@/app/kakeibo/_hooks/useKakeiboSummary";
 import { supabase } from "@/lib/supabase.client";
 import { useRouter } from "next/navigation";
 import {
@@ -16,6 +20,12 @@ import {
   type ExpenseCategory,
   type IncomeCategory,
 } from "@/constants/categories";
+
+const inputBase =
+  "w-full h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm";
+const selectBase = inputBase + " pr-8";
+const buttonPrimary =
+  "w-full rounded-lg bg-blue-500 px-3 py-2 text-white hover:bg-blue-800";
 
 export default function KakeiboPage() {
   const router = useRouter();
@@ -78,30 +88,7 @@ export default function KakeiboPage() {
     balance,
     expenseByCategory,
     incomeByCategory,
-  } = useMemo(() => {
-    let income = 0;
-    let expense = 0;
-
-    const expMap: Record<string, number> = {};
-    const incMap: Record<string, number> = {};
-
-    for (const tx of items) {
-      if (tx.type === "income") {
-        income += tx.amount;
-        incMap[tx.category] = (incMap[tx.category] ?? 0) + tx.amount;
-      } else {
-        expense += tx.amount;
-        expMap[tx.category] = (expMap[tx.category] ?? 0) + tx.amount;
-      }
-    }
-    return {
-      incomeTotal: income,
-      expenseTotal: expense,
-      balance: income - expense,
-      expenseByCategory: Object.entries(expMap).sort((a, b) => b[1] - a[1]),
-      incomeByCategory: Object.entries(incMap).sort((a, b) => b[1] - a[1]),
-    };
-  }, [items]);
+  } = useKakeiboSummary(items);
 
   if (!email) return <main className="p-6">loading...</main>;
 
@@ -126,19 +113,17 @@ export default function KakeiboPage() {
       </header>
 
       {/* 追加 */}
-      <section className="max-w-3xl space-y-2 rounded-xl border p-4">
-        <p className="font-medium">追加</p>
-
+      <Section title="追加" variant="ring">
         <div className="grid grid-cols-2 gap-2">
           <input
-            className="w-full rounded-lg border p-2"
+            className={inputBase}
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
 
           <select
-            className="w-full rounded-lg border p-2"
+            className={selectBase}
             value={type}
             onChange={(e) => {
               const nextType = e.target.value as TxType;
@@ -154,7 +139,7 @@ export default function KakeiboPage() {
           </select>
 
           <input
-            className="w-full rounded-lg border p-2"
+            className={inputBase}
             inputMode="numeric"
             placeholder="金額(円)"
             value={amount}
@@ -162,7 +147,7 @@ export default function KakeiboPage() {
           />
 
           <select
-            className="w-full rounded-lg border p-2"
+            className={selectBase}
             value={currentCategory}
             onChange={(e) =>
               setCurrentCategory(
@@ -181,14 +166,14 @@ export default function KakeiboPage() {
         </div>
 
         <input
-          className="w-full rounded-lg border p-2"
+          className={[inputBase, "mt-2"].join(" ")}
           placeholder="メモ（任意）"
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
         />
 
         <button
-          className="w-full rounded-lg border px-3 py-2"
+          className={[buttonPrimary, "mt-2.5"].join(" ")}
           onClick={async () => {
             setMsg("");
             setError(null);
@@ -208,7 +193,6 @@ export default function KakeiboPage() {
                 memo,
               });
 
-              // 保存後に再読込
               const rows = await listTransactions(month);
               setItems(rows);
 
@@ -226,11 +210,9 @@ export default function KakeiboPage() {
 
         {msg && <p className="text-sm text-zinc-700">{msg}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
-      </section>
+      </Section>
 
-      <section className="max-w-3xl space-y-2 rounded-xl border p-4 bg-zinc-50">
-        <p className="text-sm font-medium mb-2">月合計（{month}）</p>
-
+      <Section title={`月合計（${month}）`} variant="muted">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div className="rounded-lg border p-3">
             <p className="text-xs text-zinc-500">収入</p>
@@ -258,86 +240,33 @@ export default function KakeiboPage() {
             </p>
           </div>
         </div>
-      </section>
+      </Section>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-3">
-          <p className="text-sm font-semibold">カテゴリ別合計（収入）</p>
-          {incomeByCategory.length === 0 ? (
-            <p className="text-sm text-zinc-500">データ無し</p>
-          ) : (
-            <ul className="space-y-1">
-              {incomeByCategory.map(([cat, total]) => (
-                <li key={cat} className="flex justify-between py-2 text-sm">
-                  <span className="text-zinc-700">{cat}</span>
-                  <span className="font-semibold">
-                    {total.toLocaleString()}円
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-3">
-          <p className="text-sm font-semibold">カテゴリ別合計（支出）</p>
-          {expenseByCategory.length === 0 ? (
-            <p className="text-sm text-zinc-500">データなし</p>
-          ) : (
-            <ul className="space-y-1">
-              {expenseByCategory.map(([cat, total]) => (
-                <li key={cat} className="flex justify-between py-2 text-sm">
-                  <span className="text-zinc-700">{cat}</span>
-                  <span className="font-semibold">
-                    {total.toLocaleString()}円
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <CategorySummaryCard
+          title="カテゴリ別合計（収入）"
+          items={incomeByCategory}
+        />
+        <CategorySummaryCard
+          title="カテゴリ別合計（支出）"
+          items={expenseByCategory}
+        />
       </div>
 
       {/* 一覧 */}
-      <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-3">
-        <div className="flex items-end justify-between gap-3">
-          <p className="text-sm font-semibold">一覧</p>
+      <Section
+        title="一覧"
+        headerRight={
           <input
             type="month"
-            className="rounded-lg border border-zinc-200 bg-white p-2 text-sm"
+            className={[inputBase, "w-40"].join(" ")}
             value={month}
             onChange={(e) => setMonth(e.target.value)}
           />
-        </div>
-
-        {items.length === 0 ? (
-          <p className="text-sm text-zinc-500">データなし</p>
-        ) : (
-          <ul className="divide-y divide-zinc-100">
-            {items.map((tx) => (
-              <li key={tx.id} className="py-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-zinc-900 truncate">
-                      {tx.date} / {tx.category}
-                      <span className="ml-1 text-xs text-zinc-500">
-                        ({tx.type === "expense" ? "支出" : "収入"})
-                      </span>
-                    </p>
-                    {tx.memo && (
-                      <p className="text-xs text-zinc-500">{tx.memo}</p>
-                    )}
-                  </div>
-
-                  <p className="text-sm font-semibold whitespace-nowrap">
-                    {tx.amount.toLocaleString()}円
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        }
+      >
+        <TxList items={items} />
+      </Section>
     </div>
   );
 }
