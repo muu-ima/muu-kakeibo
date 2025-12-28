@@ -10,7 +10,7 @@ import {
   type TxType,
   type TransactionRow,
 } from "@/lib/transactions";
-
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
 
 export default function KakeiboPage() {
   const router = useRouter();
@@ -129,12 +129,18 @@ export default function KakeiboPage() {
             onChange={(e) => setAmount(e.target.value)}
           />
 
-          <input
-            className="w-full rounded-lg border p-2"
-            placeholder="カテゴリ"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          />
+        <select className="w-full rounded-lg border p-2"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}>
+          {(type === "expense" 
+          ? EXPENSE_CATEGORIES 
+          : INCOME_CATEGORIES
+          ).map((c) => (
+            <option key={c} value={c}>
+              {c}
+              </option>
+          ))}
+        </select>
         </div>
 
         <input
@@ -212,23 +218,26 @@ export default function KakeiboPage() {
         </div>
       </section>
 
-     <section className="max-w-md space-y-2 rounded-xl border p-4">
-      <p className="font-medium">カテゴリ別合計（収入）</p>
-      {incomeByCategory.length === 0 ? (
-       <p className="text-sm text-zinc-500">データ無し</p> 
-      ) : (
-        <ul className="space-y-2">
-          {incomeByCategory.map(([cat, total]) => (
-            <li
-              key={cat}
-              className="flex items-center justify-between rounded-lg border p-3">
+      <section className="max-w-md space-y-2 rounded-xl border p-4">
+        <p className="font-medium">カテゴリ別合計（収入）</p>
+        {incomeByCategory.length === 0 ? (
+          <p className="text-sm text-zinc-500">データ無し</p>
+        ) : (
+          <ul className="space-y-2">
+            {incomeByCategory.map(([cat, total]) => (
+              <li
+                key={cat}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
                 <p className="text-sm">{cat}</p>
-                <p className="text-sm font-semibold">{total.toLocaleString()}円</p>
+                <p className="text-sm font-semibold">
+                  {total.toLocaleString()}円
+                </p>
               </li>
-          ))}
-        </ul>
-      )}
-     </section>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="max-w-md space-y-2 rounded-xl border p-4">
         <p className="font-medium">カテゴリ別合計（支出）</p>
