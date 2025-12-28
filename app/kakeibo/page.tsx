@@ -10,7 +10,12 @@ import {
   type TxType,
   type TransactionRow,
 } from "@/lib/transactions";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
+import {
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+  type ExpenseCategory,
+  type IncomeCategory,
+} from "@/constants/categories";
 
 export default function KakeiboPage() {
   const router = useRouter();
@@ -19,7 +24,6 @@ export default function KakeiboPage() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [type, setType] = useState<TxType>("expense");
   const [amount, setAmount] = useState<string>("");
-  const [category, setCategory] = useState("食費");
   const [memo, setMemo] = useState("");
   const [msg, setMsg] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +32,23 @@ export default function KakeiboPage() {
   const [month, setMonth] = useState(() =>
     new Date().toISOString().slice(0, 7)
   ); // YYYY-MM
+
+  const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>(
+    EXPENSE_CATEGORIES[0]
+  );
+  const [incomeCategory, setIncomeCategory] = useState<IncomeCategory>(
+    INCOME_CATEGORIES[0]
+  );
+
+  const currentCategory = type === "expense" ? expenseCategory : incomeCategory;
+
+  const setCurrentCategory = (v: ExpenseCategory | IncomeCategory) => {
+    if (type === "expense") {
+      setExpenseCategory(v as ExpenseCategory);
+    } else {
+      setIncomeCategory(v as IncomeCategory);
+    }
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -115,7 +136,14 @@ export default function KakeiboPage() {
           <select
             className="w-full rounded-lg border p-2"
             value={type}
-            onChange={(e) => setType(e.target.value as TxType)}
+            onChange={(e) => {
+              const nextType = e.target.value as TxType;
+              setType(nextType);
+
+              if (nextType === "expense")
+                setExpenseCategory(EXPENSE_CATEGORIES[0]);
+              else setIncomeCategory(INCOME_CATEGORIES[0]);
+            }}
           >
             <option value="expense">支出</option>
             <option value="income">収入</option>
@@ -129,18 +157,23 @@ export default function KakeiboPage() {
             onChange={(e) => setAmount(e.target.value)}
           />
 
-        <select className="w-full rounded-lg border p-2"
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}>
-          {(type === "expense" 
-          ? EXPENSE_CATEGORIES 
-          : INCOME_CATEGORIES
-          ).map((c) => (
-            <option key={c} value={c}>
-              {c}
-              </option>
-          ))}
-        </select>
+          <select
+            value={currentCategory}
+            onChange={(e) =>
+              setCurrentCategory(
+                e.target.value as ExpenseCategory | IncomeCategory
+              )
+            }
+          >
+            
+            {(type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(
+              (c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              )
+            )}
+          </select>
         </div>
 
         <input
@@ -158,8 +191,8 @@ export default function KakeiboPage() {
 
             try {
               const amountNumber = Number(amount);
-              if (!Number.isFinite(amountNumber)) {
-                setError("金額が正しくありません");
+              if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
+                setError("金額は1円以上で入力してください");
                 return;
               }
 
@@ -167,7 +200,7 @@ export default function KakeiboPage() {
                 date,
                 type,
                 amount: Math.floor(amountNumber),
-                category,
+                category: currentCategory,
                 memo,
               });
 
