@@ -106,13 +106,16 @@ export default function KakeiboPage() {
   if (!email) return <main className="p-6">loading...</main>;
 
   return (
-    <main className="p-6 space-y-4">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold">家計簿</h1>
-        <p className="text-sm text-zinc-700">ログイン中: {email}</p>
+    <div className="space-y-6">
+      {/* ヘッダー */}
+      <header className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">家計簿</h1>
+          <p className="text-sm text-zinc-600">ログイン中: {email}</p>
+        </div>
 
         <button
-          className="rounded-lg border px-3 py-2"
+          className="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-zinc-100"
           onClick={async () => {
             await supabase.auth.signOut();
             router.replace("/login");
@@ -120,9 +123,10 @@ export default function KakeiboPage() {
         >
           ログアウト
         </button>
-      </div>
+      </header>
+
       {/* 追加 */}
-      <section className="max-w-md space-y-2 rounded-xl border p-4">
+      <section className="max-w-3xl space-y-2 rounded-xl border p-4">
         <p className="font-medium">追加</p>
 
         <div className="grid grid-cols-2 gap-2">
@@ -158,6 +162,7 @@ export default function KakeiboPage() {
           />
 
           <select
+            className="w-full rounded-lg border p-2"
             value={currentCategory}
             onChange={(e) =>
               setCurrentCategory(
@@ -165,7 +170,6 @@ export default function KakeiboPage() {
               )
             }
           >
-            
             {(type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(
               (c) => (
                 <option key={c} value={c}>
@@ -224,82 +228,83 @@ export default function KakeiboPage() {
         {error && <p className="text-sm text-red-600">{error}</p>}
       </section>
 
-      <section className="max-w-md space-y-2 rounded-xl border p-4">
-        <p className="font-medium">月合計（{month}）</p>
+      <section className="max-w-3xl space-y-2 rounded-xl border p-4 bg-zinc-50">
+        <p className="text-sm font-medium mb-2">月合計（{month}）</p>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div className="rounded-lg border p-3">
             <p className="text-xs text-zinc-500">収入</p>
-            <p className="text-sm font-semibold">
+            <p className="text-lg font-semibold">
               {incomeTotal.toLocaleString()}円
             </p>
           </div>
 
           <div className="rounded-lg border p-3">
             <p className="text-xs text-zinc-500">支出</p>
-            <p className="text-sm font-semibold">
+            <p className="text-lg font-semibold">
               {expenseTotal.toLocaleString()}円
             </p>
           </div>
 
           <div className="rounded-lg border p-3">
             <p className="text-xs text-zinc-500">差額</p>
-            <p className="text-sm font-semibold">
+            <p
+              className={[
+                "text-lg font-semibold",
+                balance < 0 ? "text-red-600" : "text-emerald-600",
+              ].join(" ")}
+            >
               {balance.toLocaleString()}円
             </p>
           </div>
         </div>
       </section>
 
-      <section className="max-w-md space-y-2 rounded-xl border p-4">
-        <p className="font-medium">カテゴリ別合計（収入）</p>
-        {incomeByCategory.length === 0 ? (
-          <p className="text-sm text-zinc-500">データ無し</p>
-        ) : (
-          <ul className="space-y-2">
-            {incomeByCategory.map(([cat, total]) => (
-              <li
-                key={cat}
-                className="flex items-center justify-between rounded-lg border p-3"
-              >
-                <p className="text-sm">{cat}</p>
-                <p className="text-sm font-semibold">
-                  {total.toLocaleString()}円
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="grid gap-4 md:grid-cols-2">
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-3">
+          <p className="text-sm font-semibold">カテゴリ別合計（収入）</p>
+          {incomeByCategory.length === 0 ? (
+            <p className="text-sm text-zinc-500">データ無し</p>
+          ) : (
+            <ul className="space-y-1">
+              {incomeByCategory.map(([cat, total]) => (
+                <li key={cat} className="flex justify-between py-2 text-sm">
+                  <span className="text-zinc-700">{cat}</span>
+                  <span className="font-semibold">
+                    {total.toLocaleString()}円
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      <section className="max-w-md space-y-2 rounded-xl border p-4">
-        <p className="font-medium">カテゴリ別合計（支出）</p>
-        {expenseByCategory.length === 0 ? (
-          <p className="text-sm text-zinc-500">データなし</p>
-        ) : (
-          <ul className="space-y-2">
-            {expenseByCategory.map(([cat, total]) => (
-              <li
-                key={cat}
-                className="flex items-center justify-between rounded-lg border p-3"
-              >
-                <p className="text-sm">{cat}</p>
-                <p className="text-sm font-semibold">
-                  {total.toLocaleString()}円
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-3">
+          <p className="text-sm font-semibold">カテゴリ別合計（支出）</p>
+          {expenseByCategory.length === 0 ? (
+            <p className="text-sm text-zinc-500">データなし</p>
+          ) : (
+            <ul className="space-y-1">
+              {expenseByCategory.map(([cat, total]) => (
+                <li key={cat} className="flex justify-between py-2 text-sm">
+                  <span className="text-zinc-700">{cat}</span>
+                  <span className="font-semibold">
+                    {total.toLocaleString()}円
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
 
       {/* 一覧 */}
-      <section className="max-w-md space-y-2 rounded-xl border p-4">
-        <div>
-          <p>一覧</p>
+      <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <p className="text-sm font-semibold">一覧</p>
           <input
             type="month"
-            className="rounded-lg border p-2"
+            className="rounded-lg border border-zinc-200 bg-white p-2 text-sm"
             value={month}
             onChange={(e) => setMonth(e.target.value)}
           />
@@ -308,20 +313,23 @@ export default function KakeiboPage() {
         {items.length === 0 ? (
           <p className="text-sm text-zinc-500">データなし</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="divide-y divide-zinc-100">
             {items.map((tx) => (
-              <li key={tx.id} className="rounded-lg border p-3">
-                <div className="flex justify-between">
-                  <div>
-                    <p className="text-sm font-medium">
-                      {tx.date} / {tx.category} (
-                      {tx.type === "expense" ? "支出" : "収入"})
+              <li key={tx.id} className="py-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-zinc-900 truncate">
+                      {tx.date} / {tx.category}
+                      <span className="ml-1 text-xs text-zinc-500">
+                        ({tx.type === "expense" ? "支出" : "収入"})
+                      </span>
                     </p>
                     {tx.memo && (
-                      <p className="text-xs text-zinc-600">{tx.memo}</p>
+                      <p className="text-xs text-zinc-500">{tx.memo}</p>
                     )}
                   </div>
-                  <p className="text-sm font-semibold">
+
+                  <p className="text-sm font-semibold whitespace-nowrap">
                     {tx.amount.toLocaleString()}円
                   </p>
                 </div>
@@ -330,6 +338,6 @@ export default function KakeiboPage() {
           </ul>
         )}
       </section>
-    </main>
+    </div>
   );
 }
