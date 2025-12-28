@@ -11,6 +11,7 @@ import {
   type TransactionRow,
 } from "@/lib/transactions";
 
+
 export default function KakeiboPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
@@ -211,12 +212,30 @@ export default function KakeiboPage() {
         </div>
       </section>
 
-      <section className="max-w-md space-y-2 rouded-xl border p-4">
+     <section className="max-w-md space-y-2 rounded-xl border p-4">
+      <p className="font-medium">カテゴリ別合計（収入）</p>
+      {incomeByCategory.length === 0 ? (
+       <p className="text-sm text-zinc-500">データ無し</p> 
+      ) : (
+        <ul className="space-y-2">
+          {incomeByCategory.map(([cat, total]) => (
+            <li
+              key={cat}
+              className="flex items-center justify-between rounded-lg border p-3">
+                <p className="text-sm">{cat}</p>
+                <p className="text-sm font-semibold">{total.toLocaleString()}円</p>
+              </li>
+          ))}
+        </ul>
+      )}
+     </section>
+
+      <section className="max-w-md space-y-2 rounded-xl border p-4">
         <p className="font-medium">カテゴリ別合計（支出）</p>
         {expenseByCategory.length === 0 ? (
           <p className="text-sm text-zinc-500">データなし</p>
         ) : (
-          <ul className="space y-2">
+          <ul className="space-y-2">
             {expenseByCategory.map(([cat, total]) => (
               <li
                 key={cat}
