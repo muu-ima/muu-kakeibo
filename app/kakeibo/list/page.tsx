@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Section from "@/app/kakeibo/_components/Section";
 import TxList from "@/app/kakeibo/_components/TxList";
+import EditTxModal from "@/app/kakeibo/_components/EditTxModal";
 import { useKakeiboSummary } from "@/app/kakeibo/_hooks/useKakeiboSummary";
 import { useKakeiboList } from "@/app/kakeibo/_hooks/useKakeiboList";
 import { supabase } from "@/lib/supabase.client";
@@ -77,10 +78,15 @@ export default function KakeiboListPage() {
     [from, to, type, category, debouncedQ]
   );
 
+  const handleSaveAndRefresh = async () => {
+    await saveEdit(); // DB更新 + close
+    await fetchList(filters); // 一覧/合計/件数を再取得
+  };
+
   useEffect(() => {
-  if (!email) return;
-  fetchList(filters);
-}, [email, filters, page, fetchList]);
+    if (!email) return;
+    fetchList(filters);
+  }, [email, filters, page, fetchList]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -287,79 +293,24 @@ export default function KakeiboListPage() {
           />
         )}
       </Section>
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* overlay */}
-          <div className="absolute inset-0 bg-black/30" onClick={closeEdit} />
-
-          {/* modal card */}
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="font-medium">取引を編集</p>
-              <button className={buttonBase} onClick={closeEdit}>
-                閉じる
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                className={inputBase}
-                type="date"
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-              />
-
-              <select
-                className={selectBase}
-                value={editType}
-                onChange={(e) => setEditType(e.target.value as TxType)}
-              >
-                <option value="expense">支出</option>
-                <option value="income">収入</option>
-              </select>
-
-              <input
-                className={inputBase}
-                inputMode="numeric"
-                placeholder="金額(円)"
-                value={editAmount}
-                onChange={(e) => setEditAmount(e.target.value)}
-              />
-
-              <select
-                className={selectBase}
-                value={editCategory}
-                onChange={(e) => setEditCategory(e.target.value)}
-              >
-                {(editType === "expense"
-                  ? EXPENSE_CATEGORIES
-                  : INCOME_CATEGORIES
-                ).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <input
-              className={[inputBase, "mt-2"].join(" ")}
-              placeholder="メモ（任意）"
-              value={editMemo}
-              onChange={(e) => setEditMemo(e.target.value)}
-            />
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button className={buttonBase} onClick={closeEdit}>
-                キャンセル
-              </button>
-              <button className={buttonBase} onClick={saveEdit}>
-                保存
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditTxModal
+        open={!!editing}
+        editDate={editDate}
+        editType={editType}
+        editCategory={editCategory}
+        editAmount={editAmount}
+        editMemo={editMemo}
+        setEditDate={setEditDate}
+        setEditType={setEditType}
+        setEditCategory={setEditCategory}
+        setEditAmount={setEditAmount}
+        setEditMemo={setEditMemo}
+        onSave={handleSaveAndRefresh}
+        onClose={closeEdit}
+        inputBase={inputBase}
+        selectBase={selectBase}
+        buttonBase={buttonBase}
+      />
     </main>
   );
 }

@@ -5,59 +5,29 @@ import { useEffect, useState } from "react";
 import Section from "@/app/kakeibo/_components/Section";
 import CategorySummaryCard from "@/app/kakeibo/_components/CategorySummary";
 import TxList from "@/app/kakeibo/_components/TxList";
+import AddTxModal from "@/app/kakeibo/_components/AddTxModal";
 import { useKakeiboSummary } from "@/app/kakeibo/_hooks/useKakeiboSummary";
 import { supabase } from "@/lib/supabase.client";
 import { useRouter } from "next/navigation";
 import {
-  addTransaction,
-  listTransactions,
   listTransactionsLatest,
-  type TxType,
   type TransactionRow,
 } from "@/lib/transactions";
-import {
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
-  type ExpenseCategory,
-  type IncomeCategory,
-} from "@/constants/categories";
+
 
 const inputBase =
   "w-full h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm";
 const selectBase = inputBase + " pr-8";
-const buttonPrimary =
-  "w-full rounded-lg bg-blue-500 px-3 py-2 text-white hover:bg-blue-800";
+const buttonBase =
+  "rounded-lg border bg-white px-3 py-2 text-sm hover:bg-zinc-100 disabled:opacity-50";
 
 export default function KakeiboPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
 
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [type, setType] = useState<TxType>("expense");
-  const [amount, setAmount] = useState<string>("");
-  const [memo, setMemo] = useState("");
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
   const [items, setItems] = useState<TransactionRow[]>([]);
+  const [addOpen, setAddOpen] = useState(false);
   const [month] = useState(() => new Date().toISOString().slice(0, 7)); // YYYY-MM
-
-  const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>(
-    EXPENSE_CATEGORIES[0]
-  );
-  const [incomeCategory, setIncomeCategory] = useState<IncomeCategory>(
-    INCOME_CATEGORIES[0]
-  );
-
-  const currentCategory = type === "expense" ? expenseCategory : incomeCategory;
-
-  const setCurrentCategory = (v: ExpenseCategory | IncomeCategory) => {
-    if (type === "expense") {
-      setExpenseCategory(v as ExpenseCategory);
-    } else {
-      setIncomeCategory(v as IncomeCategory);
-    }
-  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -75,6 +45,17 @@ export default function KakeiboPage() {
       const rows = await listTransactionsLatest(10);
       setItems(rows);
     })();
+  }, [email]);
+
+  const refreshLatest = async () => {
+    const rows = await listTransactionsLatest(10);
+    setItems(rows);
+  };
+
+  useEffect(() => {
+    if (!email) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    refreshLatest();
   }, [email]);
 
   const {
@@ -96,116 +77,37 @@ export default function KakeiboPage() {
           <p className="text-sm text-zinc-600">ログイン中: {email}</p>
         </div>
 
-        <button
-          className="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-zinc-100"
-          onClick={async () => {
-            await supabase.auth.signOut();
-            router.replace("/login");
-          }}
-        >
-          ログアウト
-        </button>
-      </header>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className={buttonBase}
+            onClick={() => setAddOpen(true)}
+          >
+            +追加
+          </button>
 
-      {/* 追加 */}
-      <Section title="追加" variant="ring">
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            className={inputBase}
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-
-          <select
-            className={selectBase}
-            value={type}
-            onChange={(e) => {
-              const nextType = e.target.value as TxType;
-              setType(nextType);
-
-              if (nextType === "expense")
-                setExpenseCategory(EXPENSE_CATEGORIES[0]);
-              else setIncomeCategory(INCOME_CATEGORIES[0]);
+          <button
+            type="button"
+            className={buttonBase}
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.replace("/login");
             }}
           >
-            <option value="expense">支出</option>
-            <option value="income">収入</option>
-          </select>
-
-          <input
-            className={inputBase}
-            inputMode="numeric"
-            placeholder="金額(円)"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-
-          <select
-            className={selectBase}
-            value={currentCategory}
-            onChange={(e) =>
-              setCurrentCategory(
-                e.target.value as ExpenseCategory | IncomeCategory
-              )
-            }
-          >
-            {(type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(
-              (c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              )
-            )}
-          </select>
+            ログアウト
+          </button>
         </div>
-
-        <input
-          className={[inputBase, "mt-2"].join(" ")}
-          placeholder="メモ（任意）"
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-        />
-
-        <button
-          className={[buttonPrimary, "mt-2.5"].join(" ")}
-          onClick={async () => {
-            setMsg("");
-            setError(null);
-
-            try {
-              const amountNumber = Number(amount);
-              if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
-                setError("金額は1円以上で入力してください");
-                return;
-              }
-
-              await addTransaction({
-                date,
-                type,
-                amount: Math.floor(amountNumber),
-                category: currentCategory,
-                memo,
-              });
-
-              const rows = await listTransactions(month);
-              setItems(rows);
-
-              setAmount("");
-              setMemo("");
-              setMsg("保存しました");
-            } catch (e: unknown) {
-              const message = e instanceof Error ? e.message : "エラー";
-              setMsg(message);
-            }
-          }}
-        >
-          保存
-        </button>
-
-        {msg && <p className="text-sm text-zinc-700">{msg}</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-      </Section>
+      </header>
+      <AddTxModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onSaved={refreshLatest}
+        inputBase={inputBase}
+        selectBase={selectBase}
+        buttonBase={buttonBase}
+        defaultDate={new Date().toISOString().slice(0, 10)}
+        defaultType="expense"
+      />
 
       <Section title={`月合計（${month}）`} variant="muted">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">

@@ -1,0 +1,133 @@
+"use client";
+
+import { useState } from "react";
+import type { TxType } from "@/lib/transactions";
+import { addTransaction } from "@/lib/transactions";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
+
+export default function AddTxModal(props: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => Promise<void> | void;
+  inputBase: string;
+  selectBase: string;
+  buttonBase: string;
+  defaultDate: string; // "YYYY-MM-DD"
+  defaultType?: TxType;
+}) {
+  const { open, onClose, defaultDate, defaultType = "expense" } = props;
+
+  if (!open) return null;
+
+  // key を変えると中身が再マウントされる（= stateが初期化される）
+  const key = `${defaultDate}-${defaultType}`;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="relative w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl">
+        <AddTxModalInner key={key} {...props} />
+      </div>
+    </div>
+  );
+}
+
+function AddTxModalInner({
+  onClose,
+  onSaved,
+  inputBase,
+  selectBase,
+  buttonBase,
+  defaultDate,
+  defaultType = "expense",
+}: {
+  onClose: () => void;
+  onSaved: () => Promise<void> | void;
+  inputBase: string;
+  selectBase: string;
+  buttonBase: string;
+  defaultDate: string;
+  defaultType?: TxType;
+}) {
+  const [date, setDate] = useState(() => defaultDate);
+  const [type, setType] = useState<TxType>(() => defaultType);
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState(() =>
+    defaultType === "expense" ? "食費" : "給料"
+  );
+  const [memo, setMemo] = useState("");
+
+  const onSave = async () => {
+    await addTransaction({
+      date,
+      type,
+      category,
+      amount: Number(amount || 0),
+      memo: memo || undefined,
+    });
+    onClose();
+    await onSaved();
+  };
+
+  return (
+    <>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm font-semibold">取引を追加</p>
+        <button className={buttonBase} onClick={onClose}>
+          閉じる
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          className={inputBase}
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <select
+          className={selectBase}
+          value={type}
+          onChange={(e) => setType(e.target.value as TxType)}
+        >
+          <option value="expense">支出</option>
+          <option value="income">収入</option>
+        </select>
+
+        <input
+          className={inputBase}
+          placeholder="金額(円)"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        <select
+          className={selectBase}
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          {(type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(
+            (c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            )
+          )}
+        </select>
+
+        <input
+          className={"col-span-2 " + inputBase}
+          placeholder="メモ（任意）"
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+        />
+      </div>
+
+      <button
+        className="mt-3 w-full rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        onClick={onSave}
+      >
+        保存
+      </button>
+    </>
+  );
+}
