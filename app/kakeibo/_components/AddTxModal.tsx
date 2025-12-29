@@ -56,17 +56,32 @@ function AddTxModalInner({
     defaultType === "expense" ? "食費" : "給料"
   );
   const [memo, setMemo] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const onSave = async () => {
-    await addTransaction({
-      date,
-      type,
-      category,
-      amount: Number(amount || 0),
-      memo: memo || undefined,
-    });
-    onClose();
-    await onSaved();
+    if (saving) return; // ✅ 二重送信防止（ガード）
+    setSaveError(null);
+
+    try {
+      setSaving(true);
+
+      await addTransaction({
+        date,
+        type,
+        category,
+        amount: Number(amount || 0),
+        memo: memo || undefined,
+      });
+
+      onClose();
+      await onSaved();
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "保存に失敗しました";
+      setSaveError(message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -123,11 +138,18 @@ function AddTxModalInner({
       </div>
 
       <button
-        className="mt-3 w-full rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        className={[
+          "mt-3 w-full rounded-lg py-2 text-sm font-semibold text-white",
+          saving
+            ? "bg-blue-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700",
+        ].join(" ")}
         onClick={onSave}
+        disabled={saving}
       >
-        保存
+        {saving ? "保存中..." : "保存"}
       </button>
+      {saveError && <p className="mt-2 text-sm text-red-600">{saveError}</p>}
     </>
   );
 }
