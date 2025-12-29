@@ -12,6 +12,8 @@ import {
   listTransactionsFiltered,
   getTotalsFiltered,
   listTransactionsForExport,
+  deleteTransaction,
+  updateTransaction,
   type TransactionRow,
   type TxType,
 } from "@/lib/transactions";
@@ -61,6 +63,105 @@ export default function KakeiboListPage() {
     balance: 0,
   });
 
+  const [editing, setEditing] = useState<TransactionRow | null>(null);
+
+  const [editDate, setEditDate] = useState("");
+  const [editType, setEditType] = useState<TxType>("expense");
+  const [editCategory, setEditCategory] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+  const [editMemo, setEditMemo] = useState("");
+
+  const fetchList = async () => {
+    setLoading(true);
+
+    const common = {
+      from,
+      to,
+      type,
+      category: category || undefined,
+      q: debouncedQ || undefined,
+    };
+
+    try {
+      const [t, c] = await Promise.all([
+        getTotalsFiltered(common),
+        countTransactionsFiltered(common),
+      ]);
+
+      setTotals(t);
+      setTotal(c);
+
+      const pages = Math.max(1, Math.ceil(c / limit));
+      if (page > pages) {
+        setPage(pages);
+        return; // page変更で再実行
+      }
+
+      const rows = await listTransactionsFiltered({
+        ...common,
+        limit,
+        offset: (page - 1) * limit,
+      });
+
+      setItems(rows);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!email) return;
+    fetchList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, from, to, type, category, debouncedQ, page]);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("この取引を削除しますか？")) return;
+    await deleteTransaction(id);
+    await fetchList();
+  };
+
+  const handleOpenEdit = (tx: TransactionRow) => {
+    setEditing(tx);
+    setEditDate(tx.date);
+    setEditType(tx.type);
+    setEditCategory(tx.category);
+    setEditAmount(String(tx.amount));
+    setEditMemo(tx.memo ?? "");
+  };
+
+  const handleCloseEdit = () => {
+    setEditing(null);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editing) return;
+
+    const n = Number(editAmount);
+    if (!Number.isFinite(n) || n <= 0) {
+      alert("金額は1円以上で入力してください");
+      return;
+    }
+
+    // type変更したのにカテゴリ未選択のまま、を防ぐ
+    if (!editCategory) {
+      alert("カテゴリを選んでください");
+      return;
+    }
+
+    await updateTransaction({
+      id: editing.id,
+      date: editDate,
+      type: editType,
+      category: editCategory,
+      amount: Math.floor(n),
+      memo: editMemo.trim() ? editMemo.trim() : null,
+    });
+
+    setEditing(null);
+    await fetchList();
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) {
@@ -78,57 +179,6 @@ export default function KakeiboListPage() {
 
     return () => clearTimeout(id);
   }, [q]);
-
-  useEffect(() => {
-    if (!email) return;
-
-    (async () => {
-      setLoading(true);
-
-      const common = {
-        from,
-        to,
-        type,
-        category: category || undefined,
-        q: debouncedQ || undefined,
-      };
-
-      try {
-        // ✅ totals と count を並列取得
-        const [t, c] = await Promise.all([
-          getTotalsFiltered(common),
-          countTransactionsFiltered(common),
-        ]);
-
-        setTotals(t);
-        setTotal(c);
-
-        // ページがはみ出したら戻す（例：検索で件数減った）
-        const pages = Math.max(1, Math.ceil(c / limit));
-        if (page > pages) {
-          setPage(pages);
-          setLoading(false);
-          return; // page変化でeffect再実行
-        }
-
-        // ✅ データ（そのページ分）は pages が確定してから
-        const rows = await listTransactionsFiltered({
-          ...common,
-          limit,
-          offset: (page - 1) * limit,
-        });
-        setItems(rows);
-      } catch (e: unknown) {
-        // 必要ならエラー表示を追加してもOK
-        console.error(e);
-        setItems([]);
-        setTotal(0);
-        setTotals({ incomeTotal: 0, expenseTotal: 0, balance: 0 });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [email, from, to, type, category, debouncedQ, page]);
 
   const handleExportCsv = async () => {
     const rows = await listTransactionsForExport({
@@ -310,9 +360,96 @@ export default function KakeiboListPage() {
         {loading ? (
           <p className="text-sm text-zinc-600">loading...</p>
         ) : (
-          <TxList items={items} />
+          <TxList
+            items={items}
+            onDelete={handleDelete}
+            onEdit={handleOpenEdit}
+          />
         )}
       </Section>
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={handleCloseEdit}
+          />
+
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-medium">取引を編集</p>
+              <button className={buttonBase} onClick={handleCloseEdit}>
+                閉じる
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className={inputBase}
+                type="date"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+              />
+
+              <select
+                className={selectBase}
+                value={editType}
+                onChange={(e) => {
+                  const v = e.target.value as TxType;
+                  setEditType(v);
+                  // type切替時はカテゴリを初期化しておくと安全
+                  setEditCategory(
+                    v === "expense"
+                      ? EXPENSE_CATEGORIES[0]
+                      : INCOME_CATEGORIES[0]
+                  );
+                }}
+              >
+                <option value="expense">支出</option>
+                <option value="income">収入</option>
+              </select>
+
+              <input
+                className={inputBase}
+                inputMode="numeric"
+                placeholder="金額(円)"
+                value={editAmount}
+                onChange={(e) => setEditAmount(e.target.value)}
+              />
+
+              <select
+                className={selectBase}
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+              >
+                {(editType === "expense"
+                  ? EXPENSE_CATEGORIES
+                  : INCOME_CATEGORIES
+                ).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <input
+              className={[inputBase, "mt-2"].join(" ")}
+              placeholder="メモ（任意）"
+              value={editMemo}
+              onChange={(e) => setEditMemo(e.target.value)}
+            />
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button className={buttonBase} onClick={handleCloseEdit}>
+                キャンセル
+              </button>
+              <button className={buttonBase} onClick={handleSaveEdit}>
+                保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

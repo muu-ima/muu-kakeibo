@@ -1,6 +1,14 @@
+"use client";
+
 import type { TransactionRow } from "@/lib/transactions";
 
-export default function TxList({ items }: { items: TransactionRow[] }) {
+type Props = {
+  items: TransactionRow[];
+  onDelete?: (id: string) => void;
+  onEdit?: (row: TransactionRow) => void;
+};
+
+export default function TxList({ items, onDelete, onEdit }: Props) {
   if (items.length === 0) {
     return <p className="text-sm text-zinc-500">データなし</p>;
   }
@@ -20,9 +28,29 @@ export default function TxList({ items }: { items: TransactionRow[] }) {
               {tx.memo && <p className="text-xs text-zinc-500">{tx.memo}</p>}
             </div>
 
-            <p className="text-sm font-semibold whitespace-nowrap">
-              {tx.amount.toLocaleString()}円
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold whitespace-nowrap">
+                {tx.amount.toLocaleString()}円
+              </p>
+
+              {/* 編集（任意） */}
+              <button
+                type="button"
+                className="rounded-md border px-2 py-1 text-xs hover:bg-zinc-50"
+                onClick={() => onEdit?.(tx)}
+              >
+                編集
+              </button>
+
+              {/* 削除 */}
+              <button
+                type="button"
+                className="rounded-md border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                onClick={() => onDelete?.(tx.id)}
+              >
+                削除
+              </button>
+            </div>
           </div>
         </li>
       ))}

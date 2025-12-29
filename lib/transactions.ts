@@ -205,3 +205,26 @@ export async function listTransactionsForExport(params: {
     "date" | "type" | "category" | "amount" | "memo"
   >[];
 }
+
+export async function deleteTransaction(id: string) {
+  const { error } = await supabase.from("transactions").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function updateTransaction(params: {
+  id: string;
+  date: string;
+  type: TxType;
+  amount: number;
+  category: string;
+  memo: string | null;
+}) {
+  const { id, ...patch } = params;
+
+  const { error } = await supabase
+    .from("transactions")
+    .update(patch)
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
