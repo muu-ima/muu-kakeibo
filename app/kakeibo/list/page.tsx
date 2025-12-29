@@ -117,7 +117,16 @@ export default function KakeiboListPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("この取引を削除しますか？")) return;
+
     await deleteTransaction(id);
+
+    // このページが「1件だけ表示」だったら、削除後は空になる可能性が高い
+    // → 前ページに戻してから fetchList（page変化でuseEffectが走る）
+    if (items.length === 1 && page > 1) {
+      setPage((p) => p - 1);
+      return;
+    }
+
     await fetchList();
   };
 
