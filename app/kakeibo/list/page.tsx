@@ -45,6 +45,7 @@ export default function KakeiboListPage() {
 
   const [items, setItems] = useState<TransactionRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [debouncedQ, setDebouncedQ] = useState("");
 
   const [page, setPage] = useState(1);
   const limit = 30;
@@ -68,6 +69,14 @@ export default function KakeiboListPage() {
     });
   }, [router]);
 
+ useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedQ(q);
+    }, 300);
+
+    return () => clearTimeout(id);
+  }, [q]);
+
   useEffect(() => {
     if (!email) return;
 
@@ -79,7 +88,7 @@ export default function KakeiboListPage() {
         to,
         type,
         category: category || undefined,
-        q: q || undefined,
+             q: debouncedQ || undefined,
       };
 
       try {
@@ -117,7 +126,8 @@ export default function KakeiboListPage() {
         setLoading(false);
       }
     })();
-  }, [email, from, to, type, category, q, page]);
+  }, [email, from, to, type, category, debouncedQ, page]);
+
 
   // type=all で category 指定されたら意味が曖昧なので「選べない」運用がラク
   const categoryOptions =
