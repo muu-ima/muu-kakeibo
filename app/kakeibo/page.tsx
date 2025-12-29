@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import {
   addTransaction,
   listTransactions,
+  listTransactionsLatest,
   type TxType,
   type TransactionRow,
 } from "@/lib/transactions";
@@ -39,9 +40,7 @@ export default function KakeiboPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [items, setItems] = useState<TransactionRow[]>([]);
-  const [month, setMonth] = useState(() =>
-    new Date().toISOString().slice(0, 7)
-  ); // YYYY-MM
+  const [month] = useState(() => new Date().toISOString().slice(0, 7)); // YYYY-MM
 
   const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>(
     EXPENSE_CATEGORIES[0]
@@ -73,14 +72,10 @@ export default function KakeiboPage() {
   useEffect(() => {
     if (!email) return;
     (async () => {
-      try {
-        const rows = await listTransactions(month);
-        setItems(rows);
-      } catch (e) {
-        console.error(e);
-      }
+      const rows = await listTransactionsLatest(10);
+      setItems(rows);
     })();
-  }, [email, month]);
+  }, [email]);
 
   const {
     incomeTotal,
@@ -254,15 +249,16 @@ export default function KakeiboPage() {
       </div>
 
       {/* 一覧 */}
+      {/* 一覧 */}
       <Section
-        title="一覧"
+        title="最新の取引"
         headerRight={
-          <input
-            type="month"
-            className={[inputBase, "w-40"].join(" ")}
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-          />
+          <button
+            className="text-sm text-blue-600 hover:underline"
+            onClick={() => router.push("/kakeibo/List")}
+          >
+            一覧を見る →
+          </button>
         }
       >
         <TxList items={items} />

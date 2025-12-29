@@ -1,5 +1,4 @@
 // lib/transactions.ts
-
 import { supabase } from "@/lib/supabase.client";
 
 export type TxType = "expense" | "income";
@@ -67,4 +66,16 @@ function nextMonthStart(month: string) {
     const[y, m] = month.split("-").map(Number);
     const d = new Date(y, m, 1);
     return d.toISOString().slice(0, 10);
+}
+
+export async function listTransactionsLatest(limit = 10) {
+    const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .order("date", {ascending: false})
+    .order("created_at", {ascending: false})
+    .limit(limit);
+
+    if (error) throw error;
+    return (data ?? []) as TransactionRow[];
 }
