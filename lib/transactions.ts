@@ -14,6 +14,24 @@ export type TransactionRow = {
     created_at: string;
 };
 
+export type TxQuery = {
+  from: string; // "YYYY-MM-DD"
+  to: string;   // "YYYY-MM-DD"
+  type?: "all" | TxType;
+  category?: string;
+  q?: string; // memo検索
+  limit?: number;  // default 30
+  offset?: number; // default 0
+};
+
+export type TxQueryCount = {
+  from: string;
+  to: string;
+  type?: "all" | TxType;
+  category?: string;
+  q?: string;
+};
+
 export async function addTransaction(input: {
     date: string;
     type: TxType;
@@ -78,4 +96,52 @@ export async function listTransactionsLatest(limit = 10) {
 
     if (error) throw error;
     return (data ?? []) as TransactionRow[];
+}
+
+export async function listTransactionsFiltered(params: TxQuery) {
+  const {
+    from,
+    to,
+    type = "all",
+    category,
+    q,
+    limit = 30,
+    offset = 0,
+  } = params;
+
+  let query = supabase
+    .from("transactions")
+    .select("*")
+    .gte("date", from)
+    .lte("date", to)
+    .order("date", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (type !== "all") query = query.eq("type", type);
+  if (category) query = query.eq("category", category);
+  if (q && q.trim()) query = query.ilike("memo", `%${q.trim()}%`);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as TransactionRow[];
+}
+
+export async function countTransactionsFiltered(params: TxQueryCount) {
+  const { from, to, type = "all", category, q } = params;
+
+  let query = supabase
+    .from("transactions")
+    // head:true でデータ本体を返さない（軽い）
+    .select("*", { count: "exact", head: true })
+    .gte("date", from)
+    .lte("date", to);
+
+  if (type !== "all") query = query.eq("type", type);
+  if (category) query = query.eq("category", category);
+  if (q && q.trim()) query = query.ilike("memo", `%${q.trim()}%`);
+
+  const { count, error } = await query;
+  if (error) throw new Error(error.message);
+
+  return count ?? 0;
 }

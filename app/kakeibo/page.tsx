@@ -249,13 +249,12 @@ export default function KakeiboPage() {
       </div>
 
       {/* 一覧 */}
-      {/* 一覧 */}
       <Section
         title="最新の取引"
         headerRight={
           <button
             className="text-sm text-blue-600 hover:underline"
-            onClick={() => router.push("/kakeibo/List")}
+            onClick={() => router.push("/kakeibo/list")}
           >
             一覧を見る →
           </button>
