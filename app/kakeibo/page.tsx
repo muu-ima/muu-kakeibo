@@ -2,11 +2,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+
 import Section from "@/app/kakeibo/_components/Section";
 import CategorySummaryCard from "@/app/kakeibo/_components/CategorySummary";
 import TxList from "@/app/kakeibo/_components/TxList";
 import AddTxModal from "@/app/kakeibo/_components/AddTxModal";
+import Toast from "@/app/kakeibo/_components/Toast";
 import { useKakeiboSummary } from "@/app/kakeibo/_hooks/useKakeiboSummary";
 import { supabase } from "@/lib/supabase.client";
 import { useRouter } from "next/navigation";
@@ -20,6 +21,8 @@ const inputBase =
 const selectBase = inputBase + " pr-8";
 const buttonBase =
   "rounded-lg border bg-white px-3 py-2 text-sm hover:bg-zinc-100 disabled:opacity-50";
+const addButton =
+  "inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50";
 const primaryButton =
   "inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-[0_10px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] hover:bg-zinc-800 active:translate-y-[1px] disabled:opacity-50";
 
@@ -30,6 +33,7 @@ export default function KakeiboPage() {
   const [items, setItems] = useState<TransactionRow[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [month] = useState(() => new Date().toISOString().slice(0, 7)); // YYYY-MM
+  const [toastOpen, setToastOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -65,49 +69,39 @@ export default function KakeiboPage() {
   return (
     <main className="min-h-dvh bg-zinc-50">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-30 border-b border-zinc-200/60 bg-white/70 backdrop-blur">
-        <div className="mx-auto w-full max-w-6xl px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🧾</span>
-                <h1 className="text-lg font-semibold tracking-tight">家計簿</h1>
-                <span className="hidden sm:inline text-xs text-zinc-400">
-                  /
-                </span>
-                <p className="hidden sm:block text-xs text-zinc-500">
-                  {month} のサマリー
-                </p>
-              </div>
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">家計簿</h1>
+          <p className="text-xs text-zinc-500">{email}</p>
+        </div>
 
-              <p className="mt-0.5 truncate text-xs text-zinc-500">{email}</p>
-            </div>
+        <div className="flex items-center gap-2">
+          {/* 追加ボタン（PC） */}
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="
+            hidden sm:inline-flex items-center gap-2
+            rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white
+            shadow-sm hover:bg-blue-700 active:bg-blue-800
+            focus:outline-none focus:ring-2 focus:ring-blue-400/50
+          "
+          >
+            <span className="text-lg leading-none">＋</span>
+            追加
+          </button>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className={primaryButton}
-                onClick={() => setAddOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                追加
-              </button>
-
-              <button
-                type="button"
-                className={[
-                  "rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm",
-                  "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
-                ].join(" ")}
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  router.replace("/login");
-                }}
-              >
-                ログアウト
-              </button>
-            </div>
-          </div>
+          {/* ログアウトは控えめ */}
+          <button
+            type="button"
+            className="rounded-full border px-3 py-2 text-xs hover:bg-zinc-100"
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.replace("/login");
+            }}
+          >
+            ログアウト
+          </button>
         </div>
       </header>
 
@@ -115,12 +109,21 @@ export default function KakeiboPage() {
         <AddTxModal
           open={addOpen}
           onClose={() => setAddOpen(false)}
-          onSaved={refreshLatest}
+          onSaved={async () => {
+            await refreshLatest();
+            setToastOpen(true);
+          }}
           inputBase={inputBase}
           selectBase={selectBase}
           buttonBase={buttonBase}
           defaultDate={new Date().toISOString().slice(0, 10)}
           defaultType="expense"
+        />
+
+        <Toast
+          open={toastOpen}
+          message="保存しました"
+          onClose={() => setToastOpen(false)}
         />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
@@ -203,6 +206,24 @@ export default function KakeiboPage() {
           </div>
         </div>
       </div>
+      <button
+        type="button"
+        onClick={() => setAddOpen(true)}
+        className="
+    fixed bottom-6 right-6 z-50
+    inline-flex h-14 w-14 items-center justify-center
+    rounded-full bg-blue-600 text-white shadow-xl
+    hover:bg-blue-700 active:bg-blue-800
+    focus:outline-none focus:ring-4 focus:ring-blue-400/40
+    sm:hidden
+     transition-all duration-200 ease-out
+      hover:-translate-y-0.5 hover:shadow-2xl
+      active:translate-y-0 active:scale-95
+        "
+        aria-label="追加"
+      >
+        <span className="text-2xl leading-none">＋</span>
+      </button>
     </main>
   );
 }

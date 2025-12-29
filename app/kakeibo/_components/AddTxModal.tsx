@@ -18,15 +18,15 @@ export default function AddTxModal(props: {
   const { open, onClose, defaultDate, defaultType = "expense" } = props;
 
   useEffect(() => {
-  if (!open) return;
+    if (!open) return;
 
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Escape") onClose();
-  };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
 
-  window.addEventListener("keydown", onKeyDown);
-  return () => window.removeEventListener("keydown", onKeyDown);
-}, [open, onClose]);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -36,7 +36,7 @@ export default function AddTxModal(props: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
         <AddTxModalInner key={key} {...props} />
       </div>
     </div>
@@ -104,13 +104,14 @@ function AddTxModalInner({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-2">
         <input
           className={inputBase}
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
+
         <select
           className={selectBase}
           value={type}
@@ -126,6 +127,7 @@ function AddTxModalInner({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
+
         <select
           className={selectBase}
           value={category}
@@ -141,7 +143,7 @@ function AddTxModalInner({
         </select>
 
         <input
-          className={"col-span-2 " + inputBase}
+          className={inputBase}
           placeholder="メモ（任意）"
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
