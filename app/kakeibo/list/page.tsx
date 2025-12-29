@@ -5,6 +5,7 @@ import Section from "@/app/kakeibo/_components/Section";
 import TxList from "@/app/kakeibo/_components/TxList";
 import { useKakeiboSummary } from "@/app/kakeibo/_hooks/useKakeiboSummary";
 import { supabase } from "@/lib/supabase.client";
+import { toCsv, downloadText } from "@/lib/csv";
 import { useRouter } from "next/navigation";
 import {
   countTransactionsFiltered,
@@ -129,6 +130,30 @@ export default function KakeiboListPage() {
     })();
   }, [email, from, to, type, category, debouncedQ, page]);
 
+  const handleExportCsv = async () => {
+    const rows = await listTransactionsForExport({
+      from,
+      to,
+      type,
+      category: category || undefined,
+      q: debouncedQ || q || undefined,
+    });
+
+    const csv = toCsv(
+      ["日付", "区分", "カテゴリ", "金額", "メモ"],
+      rows,
+      (r) => [
+        r.date,
+        r.type === "expense" ? "支出" : "収入",
+        r.category,
+        r.amount,
+        r.memo ?? "",
+      ]
+    );
+
+    downloadText(`kakeibo_${from}_${to}.csv`, csv, "text/csv;charset=utf-8;");
+  };
+
   // type=all で category 指定されたら意味が曖昧なので「選べない」運用がラク
   const categoryOptions =
     type === "expense"
@@ -160,57 +185,7 @@ export default function KakeiboListPage() {
           <button
             type="button"
             className={buttonBase}
-            onClick={
-              async () => {
-                const rows = await listTransactionsForExport({
-                  from,
-                  to,
-                  type,
-                  category: category || undefined,
-                  q: debouncedQ || q || undefined, // debounce入れてるなら debouncedQ 優先
-                });
-
-                const header = ["日付", "区分", "カテゴリ", "金額", "メモ"];
-
-                const escapeCsv = (v: unknown) => {
-                  const s = String(v ?? "");
-                  // カンマ/改行/ダブルクォートが入るならダブルクォートで囲って "" エスケープ
-                  if (/[,"\n]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
-                  return s;
-                };
-
-                const lines = [
-                  header.join(","),
-                  ...rows.map((r) =>
-                    [
-                      r.date,
-                      r.type === "expense" ? "支出" : "収入",
-                      r.category,
-                      r.amount,
-                      r.memo ?? "",
-                    ]
-                      .map(escapeCsv)
-                      .join(",")
-                  ),
-                ];
-
-                // Excel互換を上げたいなら BOM を付ける（日本語文字化け対策）
-                const csv = "\uFEFF" + lines.join("\n");
-
-                const blob = new Blob([csv], {
-                  type: "text/csv;charset=utf-8;",
-                });
-                const url = URL.createObjectURL(blob);
-
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `kakeibo_${from}_${to}.csv`;
-                a.click();
-
-                URL.revokeObjectURL(url);
-              }
-              // 今のCSV処理そのまま
-            }
+            onClick={handleExportCsv}
           >
             CSV出力
           </button>
@@ -302,7 +277,7 @@ export default function KakeiboListPage() {
           </div>
         </div>
         <p className="mt-2 text-xs text-zinc-500">
-          ※上は「このページ(最大{limit}件)」の合計
+          ※絞り込み条件に一致する全件の合計{" "}
         </p>
       </Section>
 
