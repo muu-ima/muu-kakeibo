@@ -82,31 +82,40 @@ export default function KakeiboListPage() {
         q: q || undefined,
       };
 
-      // 全件合計（条件一致）
-      const t = await getTotalsFiltered(common);
-      setTotals(t);
+      try {
+        // ✅ totals と count を並列取得
+        const [t, c] = await Promise.all([
+          getTotalsFiltered(common),
+          countTransactionsFiltered(common),
+        ]);
 
-      // ① 件数
-      const c = await countTransactionsFiltered(common);
-      setTotal(c);
+        setTotals(t);
+        setTotal(c);
 
-      // ページがはみ出したら戻す（例：検索で件数減った）
-      const pages = Math.max(1, Math.ceil(c / limit));
-      if (page > pages) {
-        setPage(pages);
+        // ページがはみ出したら戻す（例：検索で件数減った）
+        const pages = Math.max(1, Math.ceil(c / limit));
+        if (page > pages) {
+          setPage(pages);
+          setLoading(false);
+          return; // page変化でeffect再実行
+        }
+
+        // ✅ データ（そのページ分）は pages が確定してから
+        const rows = await listTransactionsFiltered({
+          ...common,
+          limit,
+          offset: (page - 1) * limit,
+        });
+        setItems(rows);
+      } catch (e: unknown) {
+        // 必要ならエラー表示を追加してもOK
+        console.error(e);
+        setItems([]);
+        setTotal(0);
+        setTotals({ incomeTotal: 0, expenseTotal: 0, balance: 0 });
+      } finally {
         setLoading(false);
-        return; // page変化でeffect再実行される
       }
-
-      // ② データ（そのページ分）
-      const rows = await listTransactionsFiltered({
-        ...common,
-        limit,
-        offset: (page - 1) * limit,
-      });
-      setItems(rows);
-
-      setLoading(false);
     })();
   }, [email, from, to, type, category, q, page]);
 
@@ -195,10 +204,7 @@ export default function KakeiboListPage() {
         </div>
       </Section>
 
-      <Section
-        title={`全件合計（条件一致:${month})`}
-        variant="muted"
-      >
+      <Section title={`全件合計（条件一致:${month})`} variant="muted">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div className="rounded-lg border p-3">
             <p className="text-xs text-zinc-500">収入</p>
