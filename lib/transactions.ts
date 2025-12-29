@@ -145,3 +145,33 @@ export async function countTransactionsFiltered(params: TxQueryCount) {
 
   return count ?? 0;
 }
+
+export async function getTotalsFiltered(params: {
+  from: string;
+  to: string;
+  type?: "all" | TxType;
+  category?: string;
+  q?: string;
+}) {
+  const { from, to, type = "all", category, q } = params;
+
+  const { data, error } = await supabase.rpc("kakeibo_totals", {
+    p_from: from,
+    p_to: to,
+    p_type: type === "all" ? null : type,
+    p_category: category || null,
+    p_q: q?.trim() ? q.trim() : null,
+  });
+
+  if (error) throw new Error(error.message);
+
+  const row = Array.isArray(data) ? data[0] : data;
+  const incomeTotal = Number(row?.income_total ?? 0);
+  const expenseTotal = Number(row?.expense_total ?? 0);
+
+  return {
+    incomeTotal,
+    expenseTotal,
+    balance: incomeTotal - expenseTotal,
+  };
+}

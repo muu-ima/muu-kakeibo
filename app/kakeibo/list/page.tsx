@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import {
   countTransactionsFiltered,
   listTransactionsFiltered,
+  getTotalsFiltered,
   type TransactionRow,
   type TxType,
 } from "@/lib/transactions";
@@ -51,6 +52,12 @@ export default function KakeiboListPage() {
   const [total, setTotal] = useState(0);
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
+  const [totals, setTotals] = useState({
+    incomeTotal: 0,
+    expenseTotal: 0,
+    balance: 0,
+  });
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) {
@@ -74,6 +81,10 @@ export default function KakeiboListPage() {
         category: category || undefined,
         q: q || undefined,
       };
+
+      // 全件合計（条件一致）
+      const t = await getTotalsFiltered(common);
+      setTotals(t);
 
       // ① 件数
       const c = await countTransactionsFiltered(common);
@@ -107,7 +118,7 @@ export default function KakeiboListPage() {
       ? INCOME_CATEGORIES
       : [];
 
-  const { incomeTotal, expenseTotal, balance } = useKakeiboSummary(items);
+  const { balance } = useKakeiboSummary(items);
 
   if (!email) return <main className="p-6">loading...</main>;
 
@@ -185,20 +196,20 @@ export default function KakeiboListPage() {
       </Section>
 
       <Section
-        title={`このページの合計（${month} / ${page}ページ目）`}
-        variant="ring"
+        title={`全件合計（条件一致:${month})`}
+        variant="muted"
       >
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <div className="rounded-lg border p-3">
             <p className="text-xs text-zinc-500">収入</p>
             <p className="text-lg font-semibold">
-              {incomeTotal.toLocaleString()}円
+              {totals.incomeTotal.toLocaleString()}円
             </p>
           </div>
           <div className="rounded-lg border p-3">
             <p className="text-xs text-zinc-500">支出</p>
             <p className="text-lg font-semibold">
-              {expenseTotal.toLocaleString()}円
+              {totals.expenseTotal.toLocaleString()}円
             </p>
           </div>
           <div className="rounded-lg border p-3">
@@ -209,12 +220,12 @@ export default function KakeiboListPage() {
                 balance < 0 ? "text-red-600" : "text-emerald-600",
               ].join(" ")}
             >
-              {balance.toLocaleString()}円
+              {totals.balance.toLocaleString()}円
             </p>
           </div>
         </div>
         <p className="mt-2 text-xs text-zinc-500">
-          ※この合計は「表示中の30件」の合計（全件合計は count/集計クエリが必要）
+          ※上は「このページ(最大{limit}件)」の合計
         </p>
       </Section>
 
