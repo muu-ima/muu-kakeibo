@@ -175,3 +175,33 @@ export async function getTotalsFiltered(params: {
     balance: incomeTotal - expenseTotal,
   };
 }
+
+
+export async function listTransactionsForExport(params: {
+  from: string;
+  to: string;
+  type?: "all" | TxType;
+  category?: string;
+  q?: string;
+}) {
+  const { from, to, type = "all", category, q } = params;
+
+  let query = supabase
+    .from("transactions")
+    .select("date,type,category,amount,memo") // CSVに必要な列だけ（軽い）
+    .gte("date", from)
+    .lte("date", to)
+    .order("date", { ascending: false });
+
+  if (type !== "all") query = query.eq("type", type);
+  if (category) query = query.eq("category", category);
+  if (q && q.trim()) query = query.ilike("memo", `%${q.trim()}%`);
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+
+  return (data ?? []) as Pick<
+    TransactionRow,
+    "date" | "type" | "category" | "amount" | "memo"
+  >[];
+}
