@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import Section from "@/app/kakeibo/_components/Section";
 import CategorySummaryCard from "@/app/kakeibo/_components/CategorySummary";
 import TxList from "@/app/kakeibo/_components/TxList";
@@ -19,6 +20,8 @@ const inputBase =
 const selectBase = inputBase + " pr-8";
 const buttonBase =
   "rounded-lg border bg-white px-3 py-2 text-sm hover:bg-zinc-100 disabled:opacity-50";
+const primaryButton =
+  "inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-[0_10px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] hover:bg-zinc-800 active:translate-y-[1px] disabled:opacity-50";
 
 export default function KakeiboPage() {
   const router = useRouter();
@@ -61,34 +64,54 @@ export default function KakeiboPage() {
 
   return (
     <main className="min-h-dvh bg-zinc-50">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">家計簿</h1>
-            <p className="text-sm text-zinc-600">ログイン中: {email}</p>
-          </div>
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-30 border-b border-zinc-200/60 bg-white/70 backdrop-blur">
+        <div className="mx-auto w-full max-w-6xl px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🧾</span>
+                <h1 className="text-lg font-semibold tracking-tight">家計簿</h1>
+                <span className="hidden sm:inline text-xs text-zinc-400">
+                  /
+                </span>
+                <p className="hidden sm:block text-xs text-zinc-500">
+                  {month} のサマリー
+                </p>
+              </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className={buttonBase}
-              onClick={() => setAddOpen(true)}
-            >
-              +追加
-            </button>
+              <p className="mt-0.5 truncate text-xs text-zinc-500">{email}</p>
+            </div>
 
-            <button
-              type="button"
-              className={buttonBase}
-              onClick={async () => {
-                await supabase.auth.signOut();
-                router.replace("/login");
-              }}
-            >
-              ログアウト
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className={primaryButton}
+                onClick={() => setAddOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                追加
+              </button>
+
+              <button
+                type="button"
+                className={[
+                  "rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm",
+                  "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900",
+                ].join(" ")}
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  router.replace("/login");
+                }}
+              >
+                ログアウト
+              </button>
+            </div>
           </div>
-        </header>
+        </div>
+      </header>
+
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 pt-6 pb-8">
         <AddTxModal
           open={addOpen}
           onClose={() => setAddOpen(false)}
@@ -99,6 +122,7 @@ export default function KakeiboPage() {
           defaultDate={new Date().toISOString().slice(0, 10)}
           defaultType="expense"
         />
+
         <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
           {/* 左：サマリー */}
           <div className="space-y-6">
@@ -160,8 +184,9 @@ export default function KakeiboPage() {
               />
             </div>
           </div>
+
           {/* 右：最新の取引 */}
-          <div className="lg:sticky lg:top-6">
+          <div className="lg:sticky lg:top-20">
             <Section
               title="最新の取引"
               headerRight={
