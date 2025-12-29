@@ -143,174 +143,195 @@ export default function KakeiboListPage() {
   if (!email) return <main className="p-6">loading...</main>;
 
   return (
-    <main className="space-y-6 p-6">
-      <header className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">取引一覧</h1>
-          <p className="text-sm text-zinc-600">ログイン中: {email}</p>
-        </div>
+    <main className="min-h-dvh bg-zinc-50">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6">
+        <header className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">取引一覧</h1>
+            <p className="text-sm text-zinc-600">ログイン中: {email}</p>
+          </div>
 
-        <button className={buttonBase} onClick={() => router.push("/kakeibo")}>
-          戻る
-        </button>
-      </header>
-      <Section
-        title="絞り込み"
-        variant="muted"
-        headerRight={
           <button
-            type="button"
             className={buttonBase}
-            onClick={handleExportCsv}
+            onClick={() => router.push("/kakeibo")}
           >
-            CSV出力
+            戻る
           </button>
-        }
-      >
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            className={inputBase}
-            type="month"
-            value={month}
-            onChange={(e) => {
-              setMonth(e.target.value);
-              setPage(1);
-            }}
-          />
+        </header>
+        <div className="grid gap-6 lg:grid-cols-[512px_1fr]">
+          {/* 左：絞り込み（sticky） */}
+          <div className="lg:sticky lg:top-6 h-fit space-y-6">
+            <Section
+              title="絞り込み"
+              variant="muted"
+              headerRight={
+                <button
+                  type="button"
+                  className={buttonBase}
+                  onClick={handleExportCsv}
+                >
+                  CSV出力
+                </button>
+              }
+            >
+              <div className="grid gap-2">
+                <input
+                  className={inputBase}
+                  type="month"
+                  value={month}
+                  onChange={(e) => {
+                    setMonth(e.target.value);
+                    setPage(1);
+                  }}
+                />
 
-          <select
-            className={selectBase}
-            value={type}
-            onChange={(e) => {
-              const v = e.target.value as "all" | TxType;
-              setType(v);
-              setCategory(""); // type切替でカテゴリ解除
-              setPage(1);
-            }}
-          >
-            <option value="all">全部</option>
-            <option value="expense">支出</option>
-            <option value="income">収入</option>
-          </select>
+                <select
+                  className={selectBase}
+                  value={type}
+                  onChange={(e) => {
+                    const v = e.target.value as "all" | TxType;
+                    setType(v);
+                    setCategory(""); // type切替でカテゴリ解除
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">全部</option>
+                  <option value="expense">支出</option>
+                  <option value="income">収入</option>
+                </select>
 
-          <input
-            className={inputBase}
-            placeholder="メモ検索（任意）"
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setPage(1);
-            }}
-          />
+                <input
+                  className={inputBase}
+                  placeholder="メモ検索（任意）"
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    setPage(1);
+                  }}
+                />
 
-          <select
-            className={selectBase}
-            value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
-              setPage(1);
-            }}
-            disabled={type === "all"}
-          >
-            <option value="">
-              {type === "all"
-                ? "カテゴリ（typeを選んでね）"
-                : "カテゴリ（任意）"}
-            </option>
-            {categoryOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+                <select
+                  className={selectBase}
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setPage(1);
+                  }}
+                  disabled={type === "all"}
+                >
+                  <option value="">
+                    {type === "all"
+                      ? "カテゴリ（typeを選んでね）"
+                      : "カテゴリ（任意）"}
+                  </option>
+                  {categoryOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </Section>
+
+            <Section title={`全件合計（条件一致:${month}）`} variant="muted">
+              <div className="rounded-xl border bg-white/60">
+                {[
+                  [
+                    "収入",
+                    totals.incomeTotal.toLocaleString() + "円",
+                    "text-zinc-900",
+                  ],
+                  [
+                    "支出",
+                    totals.expenseTotal.toLocaleString() + "円",
+                    "text-zinc-900",
+                  ],
+                  [
+                    "差額",
+                    totals.balance.toLocaleString() + "円",
+                    balance < 0 ? "text-red-600" : "text-emerald-600",
+                  ],
+                ].map(([label, value, cls], i) => (
+                  <div
+                    key={label}
+                    className={[
+                      "flex items-center justify-between px-4 py-3",
+                      i !== 0 ? "border-t" : "",
+                    ].join(" ")}
+                  >
+                    <p className="text-xs text-zinc-500">{label}</p>
+                    <p className={["text-sm font-semibold", cls].join(" ")}>
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-2 text-xs text-zinc-500">
+                ※絞り込み条件に一致する全件の合計
+              </p>
+            </Section>
+          </div>
+
+          {/* 右：取引（一覧） */}
+          <div className="space-y-6">
+            <Section
+              title="取引"
+              headerRight={
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-500">
+                    {total.toLocaleString()}件 / {page} / {totalPages}
+                  </span>
+
+                  <button
+                    className={buttonBase}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                  >
+                    前へ
+                  </button>
+
+                  <button
+                    className={buttonBase}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                  >
+                    次へ
+                  </button>
+                </div>
+              }
+            >
+              {loading ? (
+                <p className="text-sm text-zinc-600">loading...</p>
+              ) : (
+                <TxList
+                  items={items}
+                  onEdit={openEdit}
+                  onDelete={handleDelete}
+                />
+              )}
+            </Section>
+            <EditTxModal
+              open={!!editing}
+              editDate={editDate}
+              editType={editType}
+              editCategory={editCategory}
+              editAmount={editAmount}
+              editMemo={editMemo}
+              setEditDate={setEditDate}
+              setEditType={setEditType}
+              setEditCategory={setEditCategory}
+              setEditAmount={setEditAmount}
+              setEditMemo={setEditMemo}
+              onSave={handleSaveAndRefresh}
+              onClose={closeEdit}
+              inputBase={inputBase}
+              selectBase={selectBase}
+              buttonBase={buttonBase}
+            />
+          </div>
         </div>
-      </Section>
-
-      <Section title={`全件合計（条件一致:${month})`} variant="muted">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <div className="rounded-lg border p-3">
-            <p className="text-xs text-zinc-500">収入</p>
-            <p className="text-lg font-semibold">
-              {totals.incomeTotal.toLocaleString()}円
-            </p>
-          </div>
-          <div className="rounded-lg border p-3">
-            <p className="text-xs text-zinc-500">支出</p>
-            <p className="text-lg font-semibold">
-              {totals.expenseTotal.toLocaleString()}円
-            </p>
-          </div>
-          <div className="rounded-lg border p-3">
-            <p className="text-xs text-zinc-500">差額</p>
-            <p
-              className={[
-                "text-lg font-semibold",
-                balance < 0 ? "text-red-600" : "text-emerald-600",
-              ].join(" ")}
-            >
-              {totals.balance.toLocaleString()}円
-            </p>
-          </div>
-        </div>
-        <p className="mt-2 text-xs text-zinc-500">
-          ※絞り込み条件に一致する全件の合計{" "}
-        </p>
-      </Section>
-
-      <Section
-        title="取引"
-        headerRight={
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500">
-              {total.toLocaleString()}件 / {page} / {totalPages}
-            </span>
-
-            <button
-              className={buttonBase}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              前へ
-            </button>
-
-            <button
-              className={buttonBase}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-            >
-              次へ
-            </button>
-          </div>
-        }
-      >
-        {loading ? (
-          <p className="text-sm text-zinc-600">loading...</p>
-        ) : (
-          <TxList
-            items={items}
-            onDelete={(id) => handleDelete(id)} // 後で filters 渡す形に拡張してOK
-            onEdit={openEdit}
-          />
-        )}
-      </Section>
-      <EditTxModal
-        open={!!editing}
-        editDate={editDate}
-        editType={editType}
-        editCategory={editCategory}
-        editAmount={editAmount}
-        editMemo={editMemo}
-        setEditDate={setEditDate}
-        setEditType={setEditType}
-        setEditCategory={setEditCategory}
-        setEditAmount={setEditAmount}
-        setEditMemo={setEditMemo}
-        onSave={handleSaveAndRefresh}
-        onClose={closeEdit}
-        inputBase={inputBase}
-        selectBase={selectBase}
-        buttonBase={buttonBase}
-      />
+      </div>
     </main>
   );
 }

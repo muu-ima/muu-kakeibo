@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { TxType } from "@/lib/transactions";
 import { addTransaction } from "@/lib/transactions";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
@@ -16,6 +16,17 @@ export default function AddTxModal(props: {
   defaultType?: TxType;
 }) {
   const { open, onClose, defaultDate, defaultType = "expense" } = props;
+
+  useEffect(() => {
+  if (!open) return;
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+  };
+
+  window.addEventListener("keydown", onKeyDown);
+  return () => window.removeEventListener("keydown", onKeyDown);
+}, [open, onClose]);
 
   if (!open) return null;
 

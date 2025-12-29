@@ -14,7 +14,6 @@ import {
   type TransactionRow,
 } from "@/lib/transactions";
 
-
 const inputBase =
   "w-full h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm";
 const selectBase = inputBase + " pr-8";
@@ -39,14 +38,6 @@ export default function KakeiboPage() {
     });
   }, [router]);
 
-  useEffect(() => {
-    if (!email) return;
-    (async () => {
-      const rows = await listTransactionsLatest(10);
-      setItems(rows);
-    })();
-  }, [email]);
-
   const refreshLatest = async () => {
     const rows = await listTransactionsLatest(10);
     setItems(rows);
@@ -69,101 +60,124 @@ export default function KakeiboPage() {
   if (!email) return <main className="p-6">loading...</main>;
 
   return (
-    <div className="space-y-6">
-      {/* ヘッダー */}
-      <header className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">家計簿</h1>
-          <p className="text-sm text-zinc-600">ログイン中: {email}</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className={buttonBase}
-            onClick={() => setAddOpen(true)}
-          >
-            +追加
-          </button>
-
-          <button
-            type="button"
-            className={buttonBase}
-            onClick={async () => {
-              await supabase.auth.signOut();
-              router.replace("/login");
-            }}
-          >
-            ログアウト
-          </button>
-        </div>
-      </header>
-      <AddTxModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onSaved={refreshLatest}
-        inputBase={inputBase}
-        selectBase={selectBase}
-        buttonBase={buttonBase}
-        defaultDate={new Date().toISOString().slice(0, 10)}
-        defaultType="expense"
-      />
-
-      <Section title={`月合計（${month}）`} variant="muted">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <div className="rounded-lg border p-3">
-            <p className="text-xs text-zinc-500">収入</p>
-            <p className="text-lg font-semibold">
-              {incomeTotal.toLocaleString()}円
-            </p>
+    <main className="min-h-dvh bg-zinc-50">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6">
+        <header className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">家計簿</h1>
+            <p className="text-sm text-zinc-600">ログイン中: {email}</p>
           </div>
 
-          <div className="rounded-lg border p-3">
-            <p className="text-xs text-zinc-500">支出</p>
-            <p className="text-lg font-semibold">
-              {expenseTotal.toLocaleString()}円
-            </p>
-          </div>
-
-          <div className="rounded-lg border p-3">
-            <p className="text-xs text-zinc-500">差額</p>
-            <p
-              className={[
-                "text-lg font-semibold",
-                balance < 0 ? "text-red-600" : "text-emerald-600",
-              ].join(" ")}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className={buttonBase}
+              onClick={() => setAddOpen(true)}
             >
-              {balance.toLocaleString()}円
-            </p>
+              +追加
+            </button>
+
+            <button
+              type="button"
+              className={buttonBase}
+              onClick={async () => {
+                await supabase.auth.signOut();
+                router.replace("/login");
+              }}
+            >
+              ログアウト
+            </button>
+          </div>
+        </header>
+        <AddTxModal
+          open={addOpen}
+          onClose={() => setAddOpen(false)}
+          onSaved={refreshLatest}
+          inputBase={inputBase}
+          selectBase={selectBase}
+          buttonBase={buttonBase}
+          defaultDate={new Date().toISOString().slice(0, 10)}
+          defaultType="expense"
+        />
+        <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
+          {/* 左：サマリー */}
+          <div className="space-y-6">
+            {/* 月合計 */}
+            <Section title={`月合計（${month}）`} variant="muted">
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white/70 backdrop-blur">
+                {[
+                  {
+                    label: "収入",
+                    value: `${incomeTotal.toLocaleString()}円`,
+                    valueClass: "",
+                  },
+                  {
+                    label: "支出",
+                    value: `${expenseTotal.toLocaleString()}円`,
+                    valueClass: "",
+                  },
+                  {
+                    label: "差額",
+                    value: `${balance.toLocaleString()}円`,
+                    valueClass:
+                      balance < 0 ? "text-red-600" : "text-emerald-600",
+                  },
+                ].map((r, i) => (
+                  <div
+                    key={r.label}
+                    className={[
+                      "flex items-center justify-between px-4 py-3",
+                      i !== 0 ? "border-t border-zinc-100" : "",
+                    ].join(" ")}
+                  >
+                    <p className="text-xs text-zinc-500">{r.label}</p>
+                    <p
+                      className={[
+                        "text-sm font-semibold tabular-nums",
+                        r.valueClass,
+                      ].join(" ")}
+                    >
+                      {r.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-2 text-xs text-zinc-500">
+                ※この画面は最新10件の合計
+              </p>
+            </Section>
+
+            {/* カテゴリ */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <CategorySummaryCard
+                title="カテゴリ別合計（収入）"
+                items={incomeByCategory}
+              />
+              <CategorySummaryCard
+                title="カテゴリ別合計（支出）"
+                items={expenseByCategory}
+              />
+            </div>
+          </div>
+          {/* 右：最新の取引 */}
+          <div className="lg:sticky lg:top-6">
+            <Section
+              title="最新の取引"
+              headerRight={
+                <button
+                  className="text-sm text-blue-600 hover:underline"
+                  onClick={() => router.push("/kakeibo/list")}
+                >
+                  一覧を見る →
+                </button>
+              }
+            >
+              <TxList items={items} />
+            </Section>
           </div>
         </div>
-      </Section>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <CategorySummaryCard
-          title="カテゴリ別合計（収入）"
-          items={incomeByCategory}
-        />
-        <CategorySummaryCard
-          title="カテゴリ別合計（支出）"
-          items={expenseByCategory}
-        />
       </div>
-
-      {/* 一覧 */}
-      <Section
-        title="最新の取引"
-        headerRight={
-          <button
-            className="text-sm text-blue-600 hover:underline"
-            onClick={() => router.push("/kakeibo/list")}
-          >
-            一覧を見る →
-          </button>
-        }
-      >
-        <TxList items={items} />
-      </Section>
-    </div>
+    </main>
   );
 }

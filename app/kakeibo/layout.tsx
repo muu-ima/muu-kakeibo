@@ -8,7 +8,7 @@ export default function KakeiboLayout({
 }) {
   return (
     <div className="min-h-screen bg-zinc-50">
-      <div className="mx-auto max-w-3xl p-6">{children}</div>
+      <div className="mx-auto max-w-6xl p-6">{children}</div>
     </div>
   );
 }

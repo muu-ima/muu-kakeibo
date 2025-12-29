@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { TransactionRow } from "@/lib/transactions";
 
 type Props = {
@@ -9,6 +10,8 @@ type Props = {
 };
 
 export default function TxList({ items, onDelete, onEdit }: Props) {
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
   if (items.length === 0) {
     return <p className="text-sm text-zinc-500">データなし</p>;
   }
@@ -28,28 +31,67 @@ export default function TxList({ items, onDelete, onEdit }: Props) {
               {tx.memo && <p className="text-xs text-zinc-500">{tx.memo}</p>}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 relative">
               <p className="text-sm font-semibold whitespace-nowrap">
                 {tx.amount.toLocaleString()}円
               </p>
 
-              {/* 編集（任意） */}
-              <button
-                type="button"
-                className="rounded-md border px-2 py-1 text-xs hover:bg-zinc-50"
-                onClick={() => onEdit?.(tx)}
-              >
-                編集
-              </button>
+              {/* ===== PC用（md以上） ===== */}
+              <div className="hidden md:flex items-center gap-2">
+                {onEdit && (
+                  <button
+                    type="button"
+                    className="rounded-md border px-2 py-1 text-xs"
+                    onClick={() => onEdit(tx)}
+                  >
+                    編集
+                  </button>
+                )}
 
-              {/* 削除 */}
-              <button
-                type="button"
-                className="rounded-md border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                onClick={() => onDelete?.(tx.id)}
-              >
-                削除
-              </button>
+                <button
+                  type="button"
+                  className="rounded-md border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                  onClick={() => onDelete?.(tx.id)}
+                >
+                  削除
+                </button>
+              </div>
+
+              {/* ===== モバイル用（三点） ===== */}
+              <div className="md:hidden relative">
+                <button
+                  type="button"
+                  className="rounded-md border px-2 py-1 text-sm"
+                  onClick={() =>
+                    setOpenMenuId(openMenuId === tx.id ? null : tx.id)
+                  }
+                >
+                  ⋯
+                </button>
+
+                {openMenuId === tx.id && (
+                  <div className="absolute right-0 top-8 z-10 w-28 overflow-hidden rounded-lg border bg-white shadow-lg">
+                    <button
+                      className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-50"
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        onEdit?.(tx);
+                      }}
+                    >
+                      編集
+                    </button>
+                    <button
+                      className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        onDelete?.(tx.id);
+                      }}
+                    >
+                      削除
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </li>
