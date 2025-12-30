@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { TransactionRow } from "@/lib/transactions";
+import Button from "@/app/kakeibo/_components/Button";
 
 type Props = {
   items: TransactionRow[];
@@ -41,61 +42,57 @@ export default function TxList({ items, onDelete, onEdit, readOnly }: Props) {
               {!readOnly && (
                 <div className="hidden md:flex items-center gap-2">
                   {onEdit && (
-                    <button
-                      type="button"
-                      className="rounded-md border px-2 py-1 text-xs"
-                      onClick={() => onEdit(tx)}
-                    >
+                    <Button size="sm" onClick={() => onEdit(tx)}>
                       編集
-                    </button>
+                    </Button>
                   )}
 
-                  <button
-                    type="button"
-                    className="rounded-md border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                  <Button
+                    variant="danger"
+                    size="sm"
                     onClick={() => onDelete?.(tx.id)}
                   >
                     削除
-                  </button>
+                  </Button>
                 </div>
               )}
               {/* ===== モバイル用（三点） ===== */}
-               {!readOnly && (
-              <div className="md:hidden relative">
-                <button
-                  type="button"
-                  className="rounded-md border px-2 py-1 text-sm"
-                  onClick={() =>
-                    setOpenMenuId(openMenuId === tx.id ? null : tx.id)
-                  }
-                >
-                  ⋯
-                </button>
+              {!readOnly && (
+                <div className="md:hidden relative">
+                  <button
+                    type="button"
+                    className="rounded-md border px-2 py-1 text-sm"
+                    onClick={() =>
+                      setOpenMenuId(openMenuId === tx.id ? null : tx.id)
+                    }
+                  >
+                    ⋯
+                  </button>
 
-                {openMenuId === tx.id && (
-                  <div className="absolute right-0 top-8 z-10 w-28 overflow-hidden rounded-lg border bg-white shadow-lg">
-                    <button
-                      className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-50"
-                      onClick={() => {
-                        setOpenMenuId(null);
-                        onEdit?.(tx);
-                      }}
-                    >
-                      編集
-                    </button>
-                    <button
-                      className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                      onClick={() => {
-                        setOpenMenuId(null);
-                        onDelete?.(tx.id);
-                      }}
-                    >
-                      削除
-                    </button>
-                  </div>
-                )}
-              </div>
-               )}
+                  {openMenuId === tx.id && (
+                    <div className="absolute right-0 top-8 z-10 w-28 overflow-hidden rounded-lg border bg-white shadow-lg">
+                      <button
+                        className="block w-full px-3 py-2 text-left text-sm hover:bg-zinc-50"
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          onEdit?.(tx);
+                        }}
+                      >
+                        編集
+                      </button>
+                      <button
+                        className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          onDelete?.(tx.id);
+                        }}
+                      >
+                        削除
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </li>

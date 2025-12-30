@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Button from "@/app/kakeibo/_components/Button";
 import type { TxType } from "@/lib/transactions";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
 
@@ -27,9 +28,6 @@ type Props = {
   buttonBase: string;
 };
 
-// 追加モーダルの「青い保存」っぽいボタン（AddTxModalのclassに合わせて調整してOK）
-const primaryButton =
-  "w-full rounded-lg bg-blue-600 py-3 text-sm font-medium text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-400/40 disabled:opacity-50";
 
 export default function EditTxModal({
   open,
@@ -122,9 +120,9 @@ export default function EditTxModal({
 
         {/* フッター：追加モーダル寄せ（青い保存をドン） */}
         <div className="mt-6 space-y-3">
-          <button type="button" className={primaryButton} onClick={onSave}>
+          <Button variant="primary" full onClick={onSave}>
             保存
-          </button>
+          </Button>
 
           {/* 追加モーダルに合わせて、キャンセルは控えめに */}
           <button

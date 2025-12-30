@@ -8,6 +8,7 @@ import CategorySummaryCard from "@/app/kakeibo/_components/CategorySummary";
 import TxList from "@/app/kakeibo/_components/TxList";
 import AddTxModal from "@/app/kakeibo/_components/AddTxModal";
 import Toast from "@/app/kakeibo/_components/Toast";
+import Button from "@/app/kakeibo/_components/Button";
 import { useKakeiboSummary } from "@/app/kakeibo/_hooks/useKakeiboSummary";
 import { supabase } from "@/lib/supabase.client";
 import { useRouter } from "next/navigation";
@@ -21,10 +22,6 @@ const inputBase =
 const selectBase = inputBase + " pr-8";
 const buttonBase =
   "rounded-lg border bg-white px-3 py-2 text-sm hover:bg-zinc-100 disabled:opacity-50";
-const addButton =
-  "inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50";
-const primaryButton =
-  "inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-[0_10px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_14px_28px_rgba(0,0,0,0.18)] hover:bg-zinc-800 active:translate-y-[1px] disabled:opacity-50";
 
 export default function KakeiboPage() {
   const router = useRouter();
@@ -77,19 +74,9 @@ export default function KakeiboPage() {
 
         <div className="flex items-center gap-2">
           {/* 追加ボタン（PC） */}
-          <button
-            type="button"
-            onClick={() => setAddOpen(true)}
-            className="
-            hidden sm:inline-flex items-center gap-2
-            rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white
-            shadow-sm hover:bg-blue-700 active:bg-blue-800
-            focus:outline-none focus:ring-2 focus:ring-blue-400/50
-          "
-          >
-            <span className="text-lg leading-none">＋</span>
-            追加
-          </button>
+          <Button variant="primary" onClick={() => setAddOpen(true)}>
+            ＋ 追加
+          </Button>
 
           {/* ログアウトは控えめ */}
           <button
@@ -193,12 +180,13 @@ export default function KakeiboPage() {
             <Section
               title="最新の取引"
               headerRight={
-                <button
-                  className="text-sm text-blue-600 hover:underline"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => router.push("/kakeibo/list")}
                 >
                   一覧を見る →
-                </button>
+                </Button>
               }
             >
               <TxList items={items} readOnly />

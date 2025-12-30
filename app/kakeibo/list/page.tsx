@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Section from "@/app/kakeibo/_components/Section";
 import TxList from "@/app/kakeibo/_components/TxList";
 import EditTxModal from "@/app/kakeibo/_components/EditTxModal";
+import Button from "@/app/kakeibo/_components/Button";
 import { useKakeiboSummary } from "@/app/kakeibo/_hooks/useKakeiboSummary";
 import { useKakeiboList } from "@/app/kakeibo/_hooks/useKakeiboList";
 import { supabase } from "@/lib/supabase.client";
@@ -151,12 +152,9 @@ export default function KakeiboListPage() {
             <p className="text-sm text-zinc-600">ログイン中: {email}</p>
           </div>
 
-          <button
-            className={buttonBase}
-            onClick={() => router.push("/kakeibo")}
-          >
+          <Button size="sm" onClick={() => router.back()}>
             戻る
-          </button>
+          </Button>
         </header>
         <div className="grid gap-6 lg:grid-cols-[512px_1fr]">
           {/* 左：絞り込み（sticky） */}
@@ -165,13 +163,9 @@ export default function KakeiboListPage() {
               title="絞り込み"
               variant="muted"
               headerRight={
-                <button
-                  type="button"
-                  className={buttonBase}
-                  onClick={handleExportCsv}
-                >
+                <Button size="sm" onClick={handleExportCsv}>
                   CSV出力
-                </button>
+                </Button>
               }
             >
               <div className="grid gap-2">
@@ -234,7 +228,7 @@ export default function KakeiboListPage() {
             </Section>
 
             <Section title={`全件合計（条件一致:${month}）`} variant="muted">
-              <div className="rounded-xl border bg-white/60">
+              <div className="rounded-xl bg-white/60">
                 {[
                   [
                     "収入",
@@ -251,12 +245,11 @@ export default function KakeiboListPage() {
                     totals.balance.toLocaleString() + "円",
                     balance < 0 ? "text-red-600" : "text-emerald-600",
                   ],
-                ].map(([label, value, cls], i) => (
+                ].map(([label, value, cls]) => (
                   <div
                     key={label}
                     className={[
                       "flex items-center justify-between px-4 py-3",
-                      i !== 0 ? "border-t" : "",
                     ].join(" ")}
                   >
                     <p className="text-xs text-zinc-500">{label}</p>
@@ -283,21 +276,9 @@ export default function KakeiboListPage() {
                     {total.toLocaleString()}件 / {page} / {totalPages}
                   </span>
 
-                  <button
-                    className={buttonBase}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    前へ
-                  </button>
+                  <Button size="sm">前へ</Button>
 
-                  <button
-                    className={buttonBase}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                  >
-                    次へ
-                  </button>
+                  <Button size="sm">次へ</Button>
                 </div>
               }
             >
