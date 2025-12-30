@@ -201,7 +201,7 @@ export default function KakeiboPage() {
                 </button>
               }
             >
-              <TxList items={items} />
+              <TxList items={items} readOnly />
             </Section>
           </div>
         </div>

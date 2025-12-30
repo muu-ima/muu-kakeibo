@@ -7,29 +7,29 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
 type Props = {
   open: boolean;
 
-  // state
   editDate: string;
   editType: TxType;
   editCategory: string;
   editAmount: string;
   editMemo: string;
 
-  // setters
   setEditDate: (v: string) => void;
   setEditType: (v: TxType) => void;
   setEditCategory: (v: string) => void;
   setEditAmount: (v: string) => void;
   setEditMemo: (v: string) => void;
 
-  // actions
   onClose: () => void;
   onSave: () => void;
 
-  // styles
   inputBase: string;
   selectBase: string;
   buttonBase: string;
 };
+
+// 追加モーダルの「青い保存」っぽいボタン（AddTxModalのclassに合わせて調整してOK）
+const primaryButton =
+  "w-full rounded-lg bg-blue-600 py-3 text-sm font-medium text-white shadow-sm hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-400/40 disabled:opacity-50";
 
 export default function EditTxModal({
   open,
@@ -58,15 +58,18 @@ export default function EditTxModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-4 shadow-xl">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="font-medium">取引を編集</p>
-          <button className={buttonBase} onClick={onClose}>
+      {/* 追加モーダル寄せ：広め + 余白多め */}
+      <div className="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
+        {/* ヘッダー */}
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-base font-semibold">取引を編集</h2>
+          <button type="button" className={buttonBase} onClick={onClose}>
             閉じる
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        {/* フォーム：縦積み */}
+        <div className="space-y-3">
           <input
             className={inputBase}
             type="date"
@@ -80,8 +83,6 @@ export default function EditTxModal({
             onChange={(e) => {
               const v = e.target.value as TxType;
               setEditType(v);
-
-              // type切替時：カテゴリが空/不正になりやすいので初期化
               const first =
                 v === "expense" ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0];
               setEditCategory(first);
@@ -110,21 +111,28 @@ export default function EditTxModal({
               </option>
             ))}
           </select>
+
+          <input
+            className={inputBase}
+            placeholder="メモ（任意）"
+            value={editMemo}
+            onChange={(e) => setEditMemo(e.target.value)}
+          />
         </div>
 
-        <input
-          className={[inputBase, "mt-2"].join(" ")}
-          placeholder="メモ（任意）"
-          value={editMemo}
-          onChange={(e) => setEditMemo(e.target.value)}
-        />
-
-        <div className="mt-4 flex justify-end gap-2">
-          <button className={buttonBase} onClick={onClose}>
-            キャンセル
-          </button>
-          <button className={buttonBase} onClick={onSave}>
+        {/* フッター：追加モーダル寄せ（青い保存をドン） */}
+        <div className="mt-6 space-y-3">
+          <button type="button" className={primaryButton} onClick={onSave}>
             保存
+          </button>
+
+          {/* 追加モーダルに合わせて、キャンセルは控えめに */}
+          <button
+            type="button"
+            className="w-full text-sm text-zinc-500 hover:text-zinc-700"
+            onClick={onClose}
+          >
+            キャンセル
           </button>
         </div>
       </div>

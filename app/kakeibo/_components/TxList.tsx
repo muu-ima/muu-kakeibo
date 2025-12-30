@@ -7,9 +7,10 @@ type Props = {
   items: TransactionRow[];
   onDelete?: (id: string) => void;
   onEdit?: (row: TransactionRow) => void;
+  readOnly?: boolean;
 };
 
-export default function TxList({ items, onDelete, onEdit }: Props) {
+export default function TxList({ items, onDelete, onEdit, readOnly }: Props) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   if (items.length === 0) {
@@ -37,27 +38,29 @@ export default function TxList({ items, onDelete, onEdit }: Props) {
               </p>
 
               {/* ===== PC用（md以上） ===== */}
-              <div className="hidden md:flex items-center gap-2">
-                {onEdit && (
+              {!readOnly && (
+                <div className="hidden md:flex items-center gap-2">
+                  {onEdit && (
+                    <button
+                      type="button"
+                      className="rounded-md border px-2 py-1 text-xs"
+                      onClick={() => onEdit(tx)}
+                    >
+                      編集
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    className="rounded-md border px-2 py-1 text-xs"
-                    onClick={() => onEdit(tx)}
+                    className="rounded-md border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                    onClick={() => onDelete?.(tx.id)}
                   >
-                    編集
+                    削除
                   </button>
-                )}
-
-                <button
-                  type="button"
-                  className="rounded-md border px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                  onClick={() => onDelete?.(tx.id)}
-                >
-                  削除
-                </button>
-              </div>
-
+                </div>
+              )}
               {/* ===== モバイル用（三点） ===== */}
+               {!readOnly && (
               <div className="md:hidden relative">
                 <button
                   type="button"
@@ -92,6 +95,7 @@ export default function TxList({ items, onDelete, onEdit }: Props) {
                   </div>
                 )}
               </div>
+               )}
             </div>
           </div>
         </li>
