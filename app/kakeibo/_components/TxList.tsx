@@ -61,7 +61,13 @@ export default function TxList({ items, onDelete, onEdit, readOnly }: Props) {
                 <div className="md:hidden relative">
                   <button
                     type="button"
-                    className="rounded-md border px-2 py-1 text-sm"
+                    className="
+                      rounded-md px-2 py-1
+                      text-zinc-500
+                      hover:bg-zinc-100
+                      hover:text-zinc-700
+                      focus:outline-none
+                    "
                     onClick={() =>
                       setOpenMenuId(openMenuId === tx.id ? null : tx.id)
                     }

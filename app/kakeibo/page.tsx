@@ -66,7 +66,16 @@ export default function KakeiboPage() {
   return (
     <main className="min-h-dvh bg-zinc-50">
       {/* Sticky Header */}
-      <header className="flex items-center justify-between">
+      <header
+        className="
+          sticky top-0 z-20
+          backdrop-blur
+          flex items-center justify-between
+          border-b border-zinc-200/60
+          bg-linear-to-b from-white to-zinc-50
+           px-4 py-5      
+        "
+      >
         <div>
           <h1 className="text-xl font-semibold tracking-tight">家計簿</h1>
           <p className="text-xs text-zinc-500">{email}</p>
@@ -92,7 +101,7 @@ export default function KakeiboPage() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 pt-6 pb-8">
+      <div className="mx-auto w-full max-w-6xl space-y-6 pb-8">
         <AddTxModal
           open={addOpen}
           onClose={() => setAddOpen(false)}

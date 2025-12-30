@@ -145,17 +145,33 @@ export default function KakeiboListPage() {
 
   return (
     <main className="min-h-dvh bg-zinc-50">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6">
-        <header className="flex items-start justify-between gap-4">
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <header
+          className="
+            sticky top-0 z-20
+            bg-white/80 backdrop-blur
+            border-b border-zinc-200/60
+             px-4 py-5      
+             flex justify-between
+          "
+        >
+          {" "}
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">取引一覧</h1>
-            <p className="text-sm text-zinc-600">ログイン中: {email}</p>
+            <h1 className="text-xl font-semibold">取引一覧</h1>
+            <p className="text-xs text-zinc-500">ログイン中: ...</p>
           </div>
-
-          <Button size="sm" onClick={() => router.back()}>
-            戻る
-          </Button>
+          <div className="flex justify-end sm:justify-normal">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0 min-w-max whitespace-nowrap gap-1 px-2"
+              onClick={() => router.back()}
+            >
+              ← 戻る
+            </Button>
+          </div>
         </header>
+
         <div className="grid gap-6 lg:grid-cols-[512px_1fr]">
           {/* 左：絞り込み（sticky） */}
           <div className="lg:sticky lg:top-6 h-fit space-y-6">
