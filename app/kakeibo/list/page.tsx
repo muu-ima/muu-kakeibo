@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Section from "@/app/kakeibo/_components/Section";
 import TxList from "@/app/kakeibo/_components/TxList";
 import EditTxModal from "@/app/kakeibo/_components/EditTxModal";
+import MonthPicker from "@/app/kakeibo/_components/MonthPicker";
 import Button from "@/app/kakeibo/_components/Button";
 import { useKakeiboSummary } from "@/app/kakeibo/_hooks/useKakeiboSummary";
 import { useKakeiboList } from "@/app/kakeibo/_hooks/useKakeiboList";
@@ -12,8 +13,7 @@ import { toCsv, downloadText } from "@/lib/csv";
 import { useRouter } from "next/navigation";
 import { listTransactionsForExport, type TxType } from "@/lib/transactions";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
-
-type Ym = `${number}-${string}`; // "YYYY-MM"
+import type { Ym } from "@/app/kakeibo/_lib/dateTypes";
 
 const inputBase =
   "w-full h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm";
@@ -194,27 +194,29 @@ export default function KakeiboListPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <p className="text-xs text-zinc-500">開始（月）</p>
-                    <input
-                      className={inputBase}
-                      type="month"
+                    <MonthPicker
                       value={fromYm}
-                      onChange={(e) => {
-                        setFromYm(e.target.value as Ym);
+                      onChange={(v) => {
+                        setFromYm(v);
                         setPage(1);
                       }}
+                      inputClassName={inputBase}
+                      fromYear={2020}
+                      toYear={2035}
                     />
                   </div>
 
                   <div className="space-y-1">
                     <p className="text-xs text-zinc-500">終了（月）</p>
-                    <input
-                      className={inputBase}
-                      type="month"
+                    <MonthPicker
                       value={toYm}
-                      onChange={(e) => {
-                        setToYm(e.target.value as Ym);
+                      onChange={(v) => {
+                        setToYm(v);
                         setPage(1);
                       }}
+                      inputClassName={inputBase}
+                      fromYear={2020}
+                      toYear={2035}
                     />
                   </div>
                 </div>
@@ -268,12 +270,27 @@ export default function KakeiboListPage() {
             </Section>
 
             {/* ✅ 表示も month -> fromYm/toYm */}
-            <Section title={`全件合計（条件一致:${fromYm}〜${toYm}）`} variant="muted">
+            <Section
+              title={`全件合計（条件一致:${fromYm}〜${toYm}）`}
+              variant="muted"
+            >
               <div className="rounded-xl bg-white/60">
                 {[
-                  ["収入", totals.incomeTotal.toLocaleString() + "円", "text-zinc-900"],
-                  ["支出", totals.expenseTotal.toLocaleString() + "円", "text-zinc-900"],
-                  ["差額", totals.balance.toLocaleString() + "円", balance < 0 ? "text-red-600" : "text-emerald-600"],
+                  [
+                    "収入",
+                    totals.incomeTotal.toLocaleString() + "円",
+                    "text-zinc-900",
+                  ],
+                  [
+                    "支出",
+                    totals.expenseTotal.toLocaleString() + "円",
+                    "text-zinc-900",
+                  ],
+                  [
+                    "差額",
+                    totals.balance.toLocaleString() + "円",
+                    balance < 0 ? "text-red-600" : "text-emerald-600",
+                  ],
                 ].map(([label, value, cls]) => (
                   <div
                     key={label}
@@ -310,7 +327,11 @@ export default function KakeiboListPage() {
               {loading ? (
                 <p className="text-sm text-zinc-600">loading...</p>
               ) : (
-                <TxList items={items} onEdit={openEdit} onDelete={handleDelete} />
+                <TxList
+                  items={items}
+                  onEdit={openEdit}
+                  onDelete={handleDelete}
+                />
               )}
             </Section>
 
