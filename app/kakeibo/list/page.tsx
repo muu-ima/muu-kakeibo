@@ -193,7 +193,7 @@ export default function KakeiboListPage() {
             >
               <div className="grid gap-2">
                 {/* ✅ 月From/To */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid  gap-2">
                   <div className="space-y-1">
                     <p className="text-xs text-zinc-500">期間（月）</p>
 
