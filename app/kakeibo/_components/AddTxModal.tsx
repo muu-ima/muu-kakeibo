@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DatePicker from "@/app/kakeibo/_components/DatePicker";
 import type { TxType } from "@/lib/transactions";
 import { addTransaction } from "@/lib/transactions";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
+import {
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+  type Category,
+} from "@/constants/categories";
 
 export default function AddTxModal(props: {
   open: boolean;
@@ -63,9 +68,10 @@ function AddTxModalInner({
   const [date, setDate] = useState(() => defaultDate);
   const [type, setType] = useState<TxType>(() => defaultType);
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState(() =>
-    defaultType === "expense" ? "食費" : "給料"
+  const [category, setCategory] = useState<Category>(() =>
+    defaultType === "expense" ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0]
   );
+
   const [memo, setMemo] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -95,6 +101,10 @@ function AddTxModalInner({
     }
   };
 
+  useEffect(() => {
+    console.log("type:", type, "category:", category);
+  }, [type, category]);
+
   return (
     <>
       <div className="mb-3 flex items-center justify-between">
@@ -105,17 +115,20 @@ function AddTxModalInner({
       </div>
 
       <div className="space-y-2">
-        <input
-          className={inputBase}
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+        <DatePicker value={date} onChange={setDate} />
 
         <select
           className={selectBase}
           value={type}
-          onChange={(e) => setType(e.target.value as TxType)}
+          onChange={(e) => {
+            const nextType = e.target.value as TxType;
+            setType(nextType);
+            setCategory(
+              nextType === "expense"
+                ? EXPENSE_CATEGORIES[0]
+                : INCOME_CATEGORIES[0]
+            );
+          }}
         >
           <option value="expense">支出</option>
           <option value="income">収入</option>
@@ -131,7 +144,7 @@ function AddTxModalInner({
         <select
           className={selectBase}
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) => setCategory(e.target.value as Category)}
         >
           {(type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(
             (c) => (

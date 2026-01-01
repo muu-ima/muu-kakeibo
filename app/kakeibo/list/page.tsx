@@ -13,28 +13,39 @@ import { useRouter } from "next/navigation";
 import { listTransactionsForExport, type TxType } from "@/lib/transactions";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/constants/categories";
 
+type Ym = `${number}-${string}`; // "YYYY-MM"
+
 const inputBase =
   "w-full h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm";
 const selectBase = inputBase + " pr-8";
 const buttonBase =
   "rounded-lg border bg-white px-3 py-2 text-sm hover:bg-zinc-100";
 
-function monthToRange(month: string) {
-  const y = Number(month.slice(0, 4));
-  const m = Number(month.slice(5, 7));
+function ymRangeToDateRange(fromYm: string, toYm: string) {
+  const [a, b] = fromYm <= toYm ? [fromYm, toYm] : [toYm, fromYm];
+
+  const [y, m] = b.split("-").map(Number);
   const last = new Date(y, m, 0).getDate();
-  const from = `${month}-01`;
-  const to = `${month}-${String(last).padStart(2, "0")}`;
-  return { from, to };
+
+  return {
+    from: `${a}-01`,
+    to: `${b}-${String(last).padStart(2, "0")}`,
+  };
 }
 
 export default function KakeiboListPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
-  const [month, setMonth] = useState(() =>
-    new Date().toISOString().slice(0, 7)
+
+  const nowYm = new Date().toISOString().slice(0, 7) as Ym;
+  const [fromYm, setFromYm] = useState<Ym>(nowYm);
+  const [toYm, setToYm] = useState<Ym>(nowYm);
+
+  const { from, to } = useMemo(
+    () => ymRangeToDateRange(fromYm, toYm),
+    [fromYm, toYm]
   );
-  const { from, to } = useMemo(() => monthToRange(month), [month]);
+
   const [type, setType] = useState<"all" | TxType>("all");
   const [category, setCategory] = useState<string>("");
   const [q, setQ] = useState("");
@@ -80,8 +91,8 @@ export default function KakeiboListPage() {
   );
 
   const handleSaveAndRefresh = async () => {
-    await saveEdit(); // DB更新 + close
-    await fetchList(filters); // 一覧/合計/件数を再取得
+    await saveEdit();
+    await fetchList(filters);
   };
 
   useEffect(() => {
@@ -100,10 +111,7 @@ export default function KakeiboListPage() {
   }, [router]);
 
   useEffect(() => {
-    const id = setTimeout(() => {
-      setDebouncedQ(q);
-    }, 300);
-
+    const id = setTimeout(() => setDebouncedQ(q), 300);
     return () => clearTimeout(id);
   }, [q]);
 
@@ -131,7 +139,6 @@ export default function KakeiboListPage() {
     downloadText(`kakeibo_${from}_${to}.csv`, csv, "text/csv;charset=utf-8;");
   };
 
-  // type=all で category 指定されたら意味が曖昧なので「選べない」運用がラク
   const categoryOptions =
     type === "expense"
       ? EXPENSE_CATEGORIES
@@ -151,11 +158,10 @@ export default function KakeiboListPage() {
             sticky top-0 z-20
             bg-white/80 backdrop-blur
             border-b border-zinc-200/60
-             px-4 py-5      
-             flex justify-between
+            px-4 py-5
+            flex justify-between
           "
         >
-          {" "}
           <div className="space-y-1">
             <h1 className="text-xl font-semibold">取引一覧</h1>
             <p className="text-xs text-zinc-500">ログイン中: ...</p>
@@ -173,7 +179,6 @@ export default function KakeiboListPage() {
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[512px_1fr]">
-          {/* 左：絞り込み（sticky） */}
           <div className="lg:sticky lg:top-6 h-fit space-y-6">
             <Section
               title="絞り込み"
@@ -185,15 +190,34 @@ export default function KakeiboListPage() {
               }
             >
               <div className="grid gap-2">
-                <input
-                  className={inputBase}
-                  type="month"
-                  value={month}
-                  onChange={(e) => {
-                    setMonth(e.target.value);
-                    setPage(1);
-                  }}
-                />
+                {/* ✅ 月From/To */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <p className="text-xs text-zinc-500">開始（月）</p>
+                    <input
+                      className={inputBase}
+                      type="month"
+                      value={fromYm}
+                      onChange={(e) => {
+                        setFromYm(e.target.value as Ym);
+                        setPage(1);
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs text-zinc-500">終了（月）</p>
+                    <input
+                      className={inputBase}
+                      type="month"
+                      value={toYm}
+                      onChange={(e) => {
+                        setToYm(e.target.value as Ym);
+                        setPage(1);
+                      }}
+                    />
+                  </div>
+                </div>
 
                 <select
                   className={selectBase}
@@ -201,7 +225,7 @@ export default function KakeiboListPage() {
                   onChange={(e) => {
                     const v = e.target.value as "all" | TxType;
                     setType(v);
-                    setCategory(""); // type切替でカテゴリ解除
+                    setCategory("");
                     setPage(1);
                   }}
                 >
@@ -243,30 +267,17 @@ export default function KakeiboListPage() {
               </div>
             </Section>
 
-            <Section title={`全件合計（条件一致:${month}）`} variant="muted">
+            {/* ✅ 表示も month -> fromYm/toYm */}
+            <Section title={`全件合計（条件一致:${fromYm}〜${toYm}）`} variant="muted">
               <div className="rounded-xl bg-white/60">
                 {[
-                  [
-                    "収入",
-                    totals.incomeTotal.toLocaleString() + "円",
-                    "text-zinc-900",
-                  ],
-                  [
-                    "支出",
-                    totals.expenseTotal.toLocaleString() + "円",
-                    "text-zinc-900",
-                  ],
-                  [
-                    "差額",
-                    totals.balance.toLocaleString() + "円",
-                    balance < 0 ? "text-red-600" : "text-emerald-600",
-                  ],
+                  ["収入", totals.incomeTotal.toLocaleString() + "円", "text-zinc-900"],
+                  ["支出", totals.expenseTotal.toLocaleString() + "円", "text-zinc-900"],
+                  ["差額", totals.balance.toLocaleString() + "円", balance < 0 ? "text-red-600" : "text-emerald-600"],
                 ].map(([label, value, cls]) => (
                   <div
                     key={label}
-                    className={[
-                      "flex items-center justify-between px-4 py-3",
-                    ].join(" ")}
+                    className="flex items-center justify-between px-4 py-3"
                   >
                     <p className="text-xs text-zinc-500">{label}</p>
                     <p className={["text-sm font-semibold", cls].join(" ")}>
@@ -282,7 +293,6 @@ export default function KakeiboListPage() {
             </Section>
           </div>
 
-          {/* 右：取引（一覧） */}
           <div className="space-y-6">
             <Section
               title="取引"
@@ -293,7 +303,6 @@ export default function KakeiboListPage() {
                   </span>
 
                   <Button size="sm">前へ</Button>
-
                   <Button size="sm">次へ</Button>
                 </div>
               }
@@ -301,13 +310,10 @@ export default function KakeiboListPage() {
               {loading ? (
                 <p className="text-sm text-zinc-600">loading...</p>
               ) : (
-                <TxList
-                  items={items}
-                  onEdit={openEdit}
-                  onDelete={handleDelete}
-                />
+                <TxList items={items} onEdit={openEdit} onDelete={handleDelete} />
               )}
             </Section>
+
             <EditTxModal
               open={!!editing}
               editDate={editDate}

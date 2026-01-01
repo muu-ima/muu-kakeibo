@@ -78,13 +78,16 @@ export function useKakeiboList(limit: number) {
 
     await deleteTransaction(id);
 
-    // 空ページ対策
-    if (items.length === 1 && page > 1) {
-      setPage((p) => p - 1);
-      return;
-    }
+    setItems((prev) => {
+      const next = prev.filter((x) => x.id !== id);
 
-    // 再取得は呼び出し側で
+      // 空ページ対策：このページが空になったら前ページへ
+      if (next.length === 0 && page > 1) {
+        setPage((p) => p - 1);
+      }
+
+      return next;
+    });
   };
 
   const openEdit = (tx: TransactionRow) => {
