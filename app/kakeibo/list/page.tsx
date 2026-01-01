@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Section from "@/app/kakeibo/_components/Section";
 import TxList from "@/app/kakeibo/_components/TxList";
 import EditTxModal from "@/app/kakeibo/_components/EditTxModal";
-import MonthPicker from "@/app/kakeibo/_components/MonthPicker";
+import MonthRangePicker from "@/app/kakeibo/_components/MonthRangePicker";
 import Button from "@/app/kakeibo/_components/Button";
 import { useKakeiboSummary } from "@/app/kakeibo/_hooks/useKakeiboSummary";
 import { useKakeiboList } from "@/app/kakeibo/_hooks/useKakeiboList";
@@ -38,12 +38,14 @@ export default function KakeiboListPage() {
   const [email, setEmail] = useState<string | null>(null);
 
   const nowYm = new Date().toISOString().slice(0, 7) as Ym;
-  const [fromYm, setFromYm] = useState<Ym>(nowYm);
-  const [toYm, setToYm] = useState<Ym>(nowYm);
+  const [ymRange, setYmRange] = useState<{ from: Ym; to: Ym }>({
+    from: nowYm,
+    to: nowYm,
+  });
 
   const { from, to } = useMemo(
-    () => ymRangeToDateRange(fromYm, toYm),
-    [fromYm, toYm]
+    () => ymRangeToDateRange(ymRange.from, ymRange.to),
+    [ymRange.from, ymRange.to]
   );
 
   const [type, setType] = useState<"all" | TxType>("all");
@@ -193,30 +195,15 @@ export default function KakeiboListPage() {
                 {/* ✅ 月From/To */}
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <p className="text-xs text-zinc-500">開始（月）</p>
-                    <MonthPicker
-                      value={fromYm}
-                      onChange={(v) => {
-                        setFromYm(v);
-                        setPage(1);
-                      }}
-                      inputClassName={inputBase}
-                      fromYear={2020}
-                      toYear={2035}
-                    />
-                  </div>
+                    <p className="text-xs text-zinc-500">期間（月）</p>
 
-                  <div className="space-y-1">
-                    <p className="text-xs text-zinc-500">終了（月）</p>
-                    <MonthPicker
-                      value={toYm}
-                      onChange={(v) => {
-                        setToYm(v);
+                    <MonthRangePicker
+                      from={ymRange.from}
+                      to={ymRange.to}
+                      onChange={(next) => {
+                        setYmRange(next);
                         setPage(1);
                       }}
-                      inputClassName={inputBase}
-                      fromYear={2020}
-                      toYear={2035}
                     />
                   </div>
                 </div>
@@ -271,7 +258,7 @@ export default function KakeiboListPage() {
 
             {/* ✅ 表示も month -> fromYm/toYm */}
             <Section
-              title={`全件合計（条件一致:${fromYm}〜${toYm}）`}
+              title={`全件合計（条件一致:${ymRange.from}〜${ymRange.to}）`}
               variant="muted"
             >
               <div className="rounded-xl bg-white/60">

@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-
-type Ym = `${number}-${string}`; // "YYYY-MM" ざっくり
+import type { Ym } from "@/app/kakeibo/_lib/dateTypes";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -39,6 +38,9 @@ export default function MonthRangePicker({ from, to, onChange }: Props) {
     return p.y;
   });
 
+  const draftFromRef = useRef<Ym | null>(null);
+
+
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -46,7 +48,10 @@ export default function MonthRangePicker({ from, to, onChange }: Props) {
     const onDown = (e: MouseEvent) => {
       const el = wrapRef.current;
       if (!el) return;
-      if (!el.contains(e.target as Node)) setOpen(false);
+      if (!el.contains(e.target as Node)) {
+        draftFromRef.current = null; // ← これを追加
+        setOpen(false);
+      }
     };
     window.addEventListener("mousedown", onDown);
     return () => window.removeEventListener("mousedown", onDown);
@@ -67,21 +72,18 @@ export default function MonthRangePicker({ from, to, onChange }: Props) {
   const isInRange = (v: Ym) => cmp(range.from, v) <= 0 && cmp(v, range.to) <= 0;
 
   const pick = (v: Ym) => {
-    // 2クリックで範囲選択（1回目=from, 2回目=to）
-    // すでに範囲がある場合は「fromを置き直す」挙動にする
-    if (from && to) {
-      onChange({ from: v, to: v });
+    const draftFrom = draftFromRef.current;
+
+    if (!draftFrom) {
+      draftFromRef.current = v;
+      onChange({ from: v, to: v }); // プレビュー
       return;
     }
-    if (!from) {
-      onChange({ from: v, to });
-      return;
-    }
-    if (!to) {
-      onChange(clampRange(from, v));
-      setOpen(false);
-      return;
-    }
+
+    const next = clampRange(draftFrom, v);
+    onChange(next);
+    draftFromRef.current = null;
+    setOpen(false);
   };
 
   return (
@@ -122,8 +124,7 @@ export default function MonthRangePicker({ from, to, onChange }: Props) {
           <div className="grid grid-cols-3 gap-2">
             {months.map((m) => {
               const active = isInRange(m.value);
-              const edge =
-                m.value === range.from || m.value === range.to;
+              const edge = m.value === range.from || m.value === range.to;
 
               return (
                 <button
@@ -150,8 +151,10 @@ export default function MonthRangePicker({ from, to, onChange }: Props) {
               onClick={() => {
                 const now = new Date();
                 const v = ym(now.getFullYear(), now.getMonth() + 1);
+                draftFromRef.current = null;
                 onChange({ from: v, to: v });
                 setViewYear(now.getFullYear());
+                setOpen(false);
               }}
             >
               今月
@@ -160,7 +163,10 @@ export default function MonthRangePicker({ from, to, onChange }: Props) {
             <button
               type="button"
               className="rounded-lg border px-3 py-2 text-sm hover:bg-zinc-50"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                draftFromRef.current = null;
+                setOpen(false);
+              }}
             >
               閉じる
             </button>
