@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import type { TransactionRow } from "@/lib/transactions";
 import Button from "@/app/kakeibo/_components/Button";
 
@@ -19,23 +20,31 @@ export default function TxList({ items, onDelete, onEdit, readOnly }: Props) {
   }
 
   return (
-    <ul className="divide-y divide-zinc-100">
+    <ul className="divide-y divide-zinc-200/60">
       {items.map((tx) => (
-        <li key={tx.id} className="py-3">
-          <div className="flex items-start justify-between gap-4">
+        <li key={tx.id} className="py-2 sm:py-3">
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-zinc-900 truncate">
+              <p className="text-xs sm:text-sm font-medium text-zinc-900 truncate">
                 {tx.date} / {tx.category}
-                <span className="ml-1 text-xs text-zinc-500">
+                <span className="ml-1 text-[11px] text-zinc-500">
                   ({tx.type === "expense" ? "支出" : "収入"})
                 </span>
               </p>
-              {tx.memo && <p className="text-xs text-zinc-500">{tx.memo}</p>}
+
+              {tx.memo && (
+                <p className="mt-0.5 text-[11px] text-zinc-500 line-clamp-1">
+                  {tx.memo}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-2 relative">
-              <p className="text-sm font-semibold whitespace-nowrap">
-                {tx.amount.toLocaleString()}円
+              <p className="text-sm font-semibold whitespace-nowrap tabular-nums">
+                {tx.amount.toLocaleString()}
+                <span className="ml-1 text-xs font-medium text-zinc-500">
+                  円
+                </span>
               </p>
 
               {/* ===== PC用（md以上） ===== */}
